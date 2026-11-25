@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시트 앱 실습실 · 구글 시트 연동 업무 앱 만들기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --bg:#FAF6EF; --paper:#FFFFFF; --ink:#1F2A44; --muted:#5E677A; --line:#ECE5D8;
+  --navy:#17325E; --navy2:#22457F; --orange:#E07A2E; --orange-soft:#FDEEDC; --orange-ink:#8A4310;
+  --lav:#EEEBFB; --lav-ink:#4B3BA0; --sky:#E8F0FB; --mint:#E3F3EC; --mint-ink:#145C38; --rose:#FCE8E6; --rose-ink:#9B231C;
+  --c0:#E9ECF1; --c1:#FCE3DF; --c2:#E3ECFB; --c3:#E3ECFB; --c4:#E3ECFB; --c5:#DDF2EE; --c6:#DDF2EE; --c7:#DDF2EE; --c8:#DDF2EE; --c9:#E6F3DC;
+  --r:18px; --fs:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:var(--fs)}
+body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+
+/* header */
+header{position:sticky;top:0;z-index:30;height:60px;background:rgba(250,246,239,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 20px}
+.logo{font-weight:900;font-size:1.25rem;color:var(--navy);letter-spacing:-.5px}
+.logo span{color:var(--orange)}
+.htitle{font-size:.95rem;font-weight:700;color:var(--ink);padding-left:14px;border-left:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hgap{flex:1}
+.btn-present{background:var(--navy);color:#fff;border:0;border-radius:10px;padding:8px 14px;font-weight:700;font-size:.9rem}
+.lv{display:flex;align-items:center;gap:10px;font-size:.85rem;color:var(--muted)}
+.lvbar{width:120px;height:8px;background:#E6DFD1;border-radius:999px;overflow:hidden}
+.lvbar i{display:block;height:100%;width:0;background:var(--orange);transition:width .3s}
+.menu-btn{display:none;background:none;border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:1rem}
+
+/* layout */
+.wrap{display:grid;grid-template-columns:270px 1fr;min-height:calc(100vh - 60px)}
+nav.side{border-right:1px solid var(--line);padding:26px 18px 40px;position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto}
+.grp{font-size:.75rem;color:var(--muted);font-weight:700;margin:18px 10px 6px}
+.grp:first-child{margin-top:0}
+.nav-a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;text-decoration:none;font-size:.95rem;color:#3A4459}
+.nav-a:hover{background:#F2ECE1}
+.nav-a .no{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:.8rem;font-weight:900;color:var(--navy);flex:none}
+.nav-a.cur{background:#fff;box-shadow:0 1px 0 var(--line),0 4px 14px rgba(0,0,0,.04);color:var(--navy);font-weight:700}
+.nav-a.cur .no{background:var(--navy)!important;color:#fff}
+.nav-a .ok{margin-left:auto;font-size:.8rem;color:var(--mint-ink);display:none}
+.nav-a.done .ok{display:inline}
+main{padding:44px 56px 80px;max-width:1180px}
+.ch{display:none}
+.ch.on{display:block;animation:fade .3s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* chapter head */
+.chead{display:flex;gap:22px;align-items:flex-start;margin-bottom:26px}
+.bigno{font-size:4.2rem;font-weight:900;line-height:.95;color:var(--navy2);letter-spacing:-2px}
+.chead .lvchip{display:inline-block;font-size:.78rem;font-weight:700;padding:3px 12px;border-radius:999px;margin-bottom:8px}
+.chead h1{font-size:2rem;font-weight:900;line-height:1.25;letter-spacing:-.5px}
+.chead p.sub{color:var(--muted);margin-top:8px;font-size:1.02rem}
+.done-btn{margin-left:auto;flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 16px;font-weight:700;font-size:.9rem;color:var(--ink);display:flex;align-items:center;gap:8px}
+.done-btn::before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid #C7BFAF}
+.done-btn.on{background:var(--mint);border-color:#BFE3CF;color:var(--mint-ink)}
+.done-btn.on::before{background:var(--mint-ink);border-color:var(--mint-ink)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center;margin-bottom:34px}
+.eyebrow{font-size:.8rem;font-weight:900;letter-spacing:2px;color:var(--orange-ink);display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.eyebrow::before{content:"";width:28px;height:3px;background:var(--orange)}
+.hero h1{font-size:2.8rem;font-weight:900;line-height:1.2;letter-spacing:-1.5px}
+.hero h1 em{font-style:normal;background:linear-gradient(transparent 62%,#FBD9B8 62%)}
+.hero p{color:var(--muted);margin-top:14px;font-size:1.05rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:5px 12px;font-size:.85rem;text-decoration:none;color:var(--ink)}
+.chip b{font-size:.72rem;padding:1px 6px;border-radius:6px;color:var(--navy)}
+.art{background:#fff;border-radius:26px;padding:18px;box-shadow:0 10px 30px rgba(40,30,10,.08)}
+
+/* blocks */
+h2.sec{font-size:1.3rem;font-weight:900;margin:38px 0 14px;display:flex;align-items:center;gap:10px}
+h2.sec::before{content:"";width:5px;height:22px;border-radius:3px;background:var(--orange)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px}
+.card h3{font-size:1.05rem;font-weight:900;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card p,.card li{color:var(--muted);font-size:.95rem}
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{display:flex;gap:16px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;align-items:flex-start}
+.step .n{flex:none;width:32px;height:32px;border-radius:9px;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:900;font-size:.95rem}
+.step h3{font-size:1.02rem;font-weight:900}
+.step p{color:var(--muted);font-size:.93rem}
+.step .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.twocol{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:start}
+.note{border-radius:var(--r);padding:16px 18px;font-size:.95rem}
+.note b{display:block;margin-bottom:4px}
+.note.warn{background:var(--orange-soft);color:var(--orange-ink)}
+.note.info{background:var(--sky);color:var(--navy)}
+.note.ok{background:var(--mint);color:var(--mint-ink)}
+.q{background:var(--lav);border-radius:var(--r);padding:16px 20px}
+.q small{display:block;font-size:.75rem;font-weight:900;color:var(--lav-ink);margin-bottom:4px}
+.q p{font-weight:900;font-size:1.05rem;color:var(--ink)}
+.go{display:inline-flex;align-items:center;gap:8px;background:var(--navy);color:#fff;text-decoration:none;border:0;border-radius:12px;padding:9px 16px;font-weight:700;font-size:.9rem}
+.go.light{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.go.orange{background:var(--orange)}
+.small{font-size:.85rem;color:var(--muted)}
+
+/* table */
+table.t{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;font-size:.93rem}
+.t th{background:#F4EFE5;text-align:left;padding:10px 14px;font-weight:700;color:var(--ink)}
+.t td{padding:10px 14px;border-top:1px solid var(--line);vertical-align:top}
+.t td:first-child{font-weight:700;color:var(--navy)}
+
+/* code */
+.code{position:relative;background:#14213D;color:#E6EEFB;border-radius:var(--r);padding:48px 22px 20px;font-size:.88rem;line-height:1.7;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Noto Sans KR',monospace;max-height:520px;overflow:auto}
+.code.prompt{font-family:'Noto Sans KR',sans-serif;font-size:.95rem}
+.copy{position:absolute;top:10px;right:10px;background:var(--orange);color:#fff;border:0;border-radius:9px;padding:6px 12px;font-size:.8rem;font-weight:700}
+.copy.ok{background:var(--mint-ink)}
+.code-wrap{position:relative}
+.code-wrap .copy{position:absolute;z-index:2}
+.tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 12px;font-size:.85rem;font-weight:700;color:var(--muted)}
+.tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* builder */
+.builder{display:grid;grid-template-columns:.9fr 1.1fr;gap:22px;align-items:start}
+.form{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.form label{font-size:.85rem;font-weight:700;color:var(--ink);display:flex;flex-direction:column;gap:6px}
+.form input[type=text],.form textarea,.form select{font-family:inherit;font-size:.92rem;border:1px solid #DDD5C6;border-radius:10px;padding:8px 10px;background:#FFFDF9;color:var(--ink)}
+.form textarea{resize:vertical;min-height:60px}
+.tog{flex-direction:row!important;align-items:center;gap:10px!important;font-weight:500!important}
+.tog input{width:18px;height:18px;accent-color:var(--navy)}
+
+/* tests */
+.test{display:flex;gap:14px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.test .body{flex:1}
+.test h3{font-size:1rem;font-weight:900}
+.test p{font-size:.92rem;color:var(--muted)}
+.pf{display:flex;gap:6px;flex:none}
+.pf button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 12px;font-weight:700;font-size:.85rem;color:var(--muted)}
+.pf button.p.on{background:var(--mint);color:var(--mint-ink);border-color:#BFE3CF}
+.pf button.f.on{background:var(--rose);color:var(--rose-ink);border-color:#F3C3BE}
+
+/* details */
+details{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 18px}
+details+details{margin-top:10px}
+summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"＋";color:var(--orange);font-weight:900}
+details[open] summary::after{content:"－"}
+details .dbody{margin-top:10px;color:var(--muted);font-size:.93rem}
+
+/* prev/next */
+.pn{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:48px;padding-top:24px;border-top:1px solid var(--line)}
+.pn a{display:block;border-radius:var(--r);padding:16px 20px;text-decoration:none;background:#fff;border:1px solid var(--line)}
+.pn a small{display:block;font-size:.8rem;color:var(--muted)}
+.pn a b{font-size:1.02rem}
+.pn a.next{background:var(--navy);color:#fff;text-align:right;border-color:var(--navy)}
+.pn a.next small{color:#C9D6EE}
+.pn a.hide{visibility:hidden}
+
+footer{border-top:1px solid var(--line);text-align:center;padding:22px;font-size:.82rem;color:var(--muted)}
+
+/* preview */
+.pv{position:fixed;inset:0;background:rgba(20,30,50,.55);z-index:60;display:flex;align-items:center;justify-content:center;padding:20px}
+.pv[hidden]{display:none}
+.pv-box{background:#fff;border-radius:20px;width:min(900px,100%);height:min(720px,100%);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.pv-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line)}
+.pv-bar button{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 12px;font-weight:700}
+.pv-box iframe{flex:1;border:0;width:100%}
+.peek{display:flex;gap:16px;align-items:center;background:linear-gradient(135deg,#EAF5F1,#FDEEDC);border-radius:var(--r);padding:18px 22px;margin:10px 0 14px}
+.peek .bear{font-size:3rem;animation:bob2 2.4s ease-in-out infinite}
+@keyframes bob2{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+/* present mode */
+body.present{--fs:20px}
+body.present nav.side{display:none}
+body.present .wrap{grid-template-columns:1fr}
+body.present main{margin:0 auto;max-width:1300px}
+.endbar{display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:40;background:rgba(23,50,94,.92);color:#fff;border-radius:999px;padding:6px 8px;gap:6px;align-items:center;font-size:14px}
+body.present .endbar{display:flex}
+.endbar button{background:transparent;color:#fff;border:0;padding:6px 12px;border-radius:999px;font-size:14px}
+.endbar button:hover{background:rgba(255,255,255,.15)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  nav.side{position:fixed;left:0;top:60px;width:280px;background:var(--bg);z-index:25;transform:translateX(-100%);transition:transform .25s;box-shadow:6px 0 20px rgba(0,0,0,.08)}
+  nav.side.open{transform:none}
+  .menu-btn{display:block}
+  main{padding:28px 18px 60px}
+  .hero,.twocol,.builder,.grid2,.grid3{grid-template-columns:1fr}
+  .htitle,.lvbar{display:none}
+  .bigno{font-size:3rem}
+}
+</style>
+</head>
+<body>
+<header>
+  <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기">☰</button>
+  <div class="logo">시트앱<span>·</span>실습실</div>
+  <div class="htitle">구글 시트 연동 업무 앱 만들기 · 3–4차시</div>
+  <div class="hgap"></div>
+  <button class="btn-present" id="presentBtn">🖥 발표 모드</button>
+  <div class="lv">레벨 <div class="lvbar"><i id="lvfill"></i></div><b id="lvtxt">0 / 9</b></div>
+</header>
+
+<div class="wrap">
+<nav class="side" id="side">
+  <div class="grp">준비</div>
+  <a class="nav-a" href="#ch-0" data-i="0"><span class="no" style="background:var(--c0)">0</span>시작하기<span class="ok">✔</span></a>
+  <div class="grp">이해하기</div>
+  <a class="nav-a" href="#ch-1" data-i="1"><span class="no" style="background:var(--c1)">1</span>이론 한눈에<span class="ok">✔</span></a>
+  <div class="grp">3차시 · 학생 상담 키오스크</div>
+  <a class="nav-a" href="#ch-2" data-i="2"><span class="no" style="background:var(--c2)">2</span>실습 1 시트 만들기<span class="ok">✔</span></a>
+  <a class="nav-a" href="#ch-3" data-i="3"><span class="no" style="background:var(--c3)">3</span>실습 2 AI에게 부탁<span class="ok">✔</span></a>
+  <a class="nav-a" href="#ch-4" data-i="4"><span class="no" style="background:var(--c4)">4</span>실습 3 붙여 넣고 배포<span class="ok">✔</span></a>
+  <div class="grp">4차시 · 교직원 연수 등록부</div>
+  <a class="nav-a" href="#ch-5" data-i="5"><span class="no" style="background:var(--c5)">5</span>실습 4 시트 세 장<span class="ok">✔</span></a>
+  <a class="nav-a" href="#ch-6" data-i="6"><span class="no" style="background:var(--c6)">6</span>실습 5 등록부 부탁<span class="ok">✔</span></a>
+  <a class="nav-a" href="#ch-7" data-i="7"><span class="no" style="background:var(--c7)">7</span>실습 6 검증하기<span class="ok">✔</span></a>
+  <a class="nav-a" href="#ch-8" data-i="8"><span class="no" style="background:var(--c8)">8</span>실습 7–8 Netlify 배포<span class="ok">✔</span></a>
+  <div class="grp">정리</div>
+  <a class="nav-a" href="#ch-9" data-i="9"><span class="no" style="background:var(--c9)">9</span>내 업무에 적용하기<span class="ok">✔</span></a>
+</nav>
+
+<main id="main">
+
+<!-- ================= 0 시작하기 ================= -->
+<section class="ch" id="ch-0" data-i="0" data-name="시작하기">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">AI·디지털지식나눔교사 2기 · 3–4차시</div>
+      <h1>시트에 저장되는<br><em>우리 학교 업무 앱</em></h1>
+      <p>학생이 직접 신청하는 상담 키오스크, 교직원이 직접 등록하는 연수 등록부.<br>바이브코딩으로 오늘 두 개를 만들어 갑니다.</p>
+      <div class="chips">
+        <a class="chip" href="#ch-1"><b style="background:var(--c1)">LV.1</b>이론</a>
+        <a class="chip" href="#ch-2"><b style="background:var(--c2)">LV.2</b>상담 시트</a>
+        <a class="chip" href="#ch-3"><b style="background:var(--c3)">LV.3</b>키오스크 부탁</a>
+        <a class="chip" href="#ch-4"><b style="background:var(--c4)">LV.4</b>배포</a>
+        <a class="chip" href="#ch-5"><b style="background:var(--c5)">LV.5</b>등록부 시트</a>
+        <a class="chip" href="#ch-6"><b style="background:var(--c6)">LV.6</b>등록부 부탁</a>
+        <a class="chip" href="#ch-7"><b style="background:var(--c7)">LV.7</b>검증</a>
+        <a class="chip" href="#ch-8"><b style="background:var(--c8)">LV.8</b>Netlify 배포</a>
+        <a class="chip" href="#ch-9"><b style="background:var(--c9)">LV.9</b>내 업무에</a>
+      </div>
+    </div>
+    <div class="art">
+      <svg viewBox="0 0 440 300" role="img" aria-label="태블릿 신청 화면에서 구글 시트로 기록이 쌓이는 그림" style="width:100%;height:auto;display:block">
+        <rect x="0" y="0" width="440" height="300" rx="20" fill="#FDF3E6"/>
+        <rect x="26" y="46" width="200" height="150" rx="18" fill="#1C2333"/>
+        <rect x="38" y="58" width="176" height="126" rx="10" fill="#F4F8FF"/>
+        <rect x="56" y="70" width="140" height="12" rx="6" fill="#17325E"/>
+        <rect x="50" y="94" width="48" height="28" rx="7" fill="#2F6FD1"/><rect x="104" y="94" width="48" height="28" rx="7" fill="#fff" stroke="#CFE0FA" stroke-width="2"/><rect x="158" y="94" width="44" height="28" rx="7" fill="#fff" stroke="#CFE0FA" stroke-width="2"/>
+        <rect x="50" y="130" width="70" height="20" rx="6" fill="#fff" stroke="#CFE0FA" stroke-width="2"/><rect x="126" y="130" width="76" height="20" rx="6" fill="#fff" stroke="#CFE0FA" stroke-width="2"/>
+        <rect x="70" y="158" width="112" height="18" rx="7" fill="#E07A2E"/>
+        <path d="M236 120 C 262 120, 262 150, 288 150" stroke="#E07A2E" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="2 10"/>
+        <polygon points="286,140 302,150 286,160" fill="#E07A2E"/>
+        <rect x="300" y="64" width="118" height="168" rx="12" fill="#fff" stroke="#E6DFD1" stroke-width="2"/>
+        <rect x="300" y="64" width="118" height="22" rx="12" fill="#1E7F4F"/><rect x="300" y="76" width="118" height="10" fill="#1E7F4F"/>
+        <g fill="#E6F4EA"><rect x="308" y="94" width="102" height="16" rx="3"/></g>
+        <g fill="#EEF1F4"><rect x="308" y="116" width="102" height="14" rx="3"/><rect x="308" y="136" width="102" height="14" rx="3"/><rect x="308" y="156" width="102" height="14" rx="3"/><rect x="308" y="176" width="102" height="14" rx="3"/></g>
+        <rect x="308" y="196" width="102" height="14" rx="3" fill="#FBD9B8"/>
+        <circle cx="110" cy="246" r="22" fill="#FBD9B8"/><path d="M98 247 l8 8 l16 -16" stroke="#8A4310" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="142" y="236" width="120" height="10" rx="5" fill="#E6DFD1"/><rect x="142" y="252" width="80" height="10" rx="5" fill="#E6DFD1"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="grid3">
+    <div class="card"><h3>🧰 시작 전 꼭!</h3><p><b style="color:var(--navy)">① Google 로그인</b> (학교 계정이 막혀 있으면 개인 계정)<br><b style="color:var(--navy)">② Netlify 회원가입</b> (메일 인증까지)<br>③ AI 도구 하나 열어 두기</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><a class="go" href="https://accounts.google.com" target="_blank" rel="noopener">🔑 Google 로그인</a><a class="go orange" href="https://app.netlify.com/signup" target="_blank" rel="noopener">🌐 Netlify 가입</a></div></div>
+    <div class="card"><h3>🧭 오늘의 흐름</h3><p>이론은 짧게, 실습은 길게. 같은 과정(시트 → 부탁 → 배포 → 검증)을 앱 두 개로 두 번 반복합니다.</p></div>
+    <div class="card"><h3>⭐ 레벨 표시</h3><p>각 장을 마치면 [다 했어요]를 눌러 주세요. 기록은 이 브라우저에만 남습니다.</p></div>
+  </div>
+
+  <h2 class="sec">실습 주소 모음</h2>
+  <div class="grid2">
+    <div class="card"><h3>📊 구글 시트·스크립트</h3><div class="steps" style="gap:8px;margin-top:8px">
+      <a class="go light" href="https://sheets.new" target="_blank" rel="noopener">📄 새 구글 시트 만들기 (sheets.new)</a>
+      <a class="go light" href="https://script.google.com" target="_blank" rel="noopener">⚙️ Apps Script 열기 (script.google.com)</a>
+      <a class="go light" href="https://app.netlify.com/signup" target="_blank" rel="noopener">🌐 Netlify 회원가입 (app.netlify.com)</a></div></div>
+    <div class="card"><h3>🤖 AI 도구</h3><div class="steps" style="gap:8px;margin-top:8px">
+      <a class="go light" href="https://gemini.google.com" target="_blank" rel="noopener">✨ Gemini 열기</a>
+      <a class="go light" href="https://chatgpt.com" target="_blank" rel="noopener">💬 ChatGPT 열기</a>
+      <a class="go light" href="https://claude.ai" target="_blank" rel="noopener">🟠 Claude 열기</a></div></div>
+  </div>
+
+  <h2 class="sec">함께 볼 영상</h2>
+  <div class="grid3">
+    <a class="card" style="text-decoration:none" href="https://www.youtube.com/watch?v=ndZvUJ7BRFo" target="_blank" rel="noopener"><h3>▶️ 신진서, AI에 역전승</h3><p>MBC 뉴스데스크 · AI로 배우고 스스로 판단해 AI를 이긴 사례</p></a>
+    <a class="card" style="text-decoration:none" href="https://www.youtube.com/shorts/GfDoZ383UUM" target="_blank" rel="noopener"><h3>▶️ "당신들 제정신이냐?" 젠슨 황</h3><p>KBS 쇼츠 · AI 사용을 줄이라는 관리자를 질책한 엔비디아 CEO</p></a>
+    <a class="card" style="text-decoration:none" href="https://www.youtube.com/watch?v=uVXmoYSNb5c" target="_blank" rel="noopener"><h3>▶️ 'AI 대부' 힌튼의 경고</h3><p>KBS 9시 뉴스 · "AI가 사람을 대체할 것"</p></a>
+  </div>
+</section>
+
+<!-- ================= 1 이론 ================= -->
+<section class="ch" id="ch-1" data-i="1" data-name="이론 한눈에">
+  <div class="chead"><div class="bigno">01</div><div><span class="lvchip" style="background:var(--c1);color:var(--rose-ink)">LV.1 · 이론</span><h1>이론 한눈에</h1><p class="sub">만들기 전에 꼭 알아 둘 네 가지</p></div><button class="done-btn" data-done="1">다 했어요</button></div>
+
+  <h2 class="sec">가짜 일의 세 얼굴</h2>
+  <div class="grid3">
+    <div class="card"><h3>✍️ 옮겨 적기</h3><p>종이 → 파일 → 시스템으로 같은 내용을 여러 번 입력</p><p style="color:var(--navy);font-weight:700;margin-top:6px">→ 상담 키오스크가 해결</p></div>
+    <div class="card"><h3>📥 취합하기</h3><p>메신저·쪽지로 흩어진 응답을 한 파일로 모으기</p><p style="color:var(--navy);font-weight:700;margin-top:6px">→ 연수 등록부가 해결</p></div>
+    <div class="card"><h3>🔎 확인하기</h3><p>누가 했고 안 했는지 명단과 하나씩 대조</p><p style="color:var(--navy);font-weight:700;margin-top:6px">→ 관리 화면이 해결</p></div>
+  </div>
+
+  <h2 class="sec">시트 연동 앱은 3층 건물</h2>
+  <div class="grid3">
+    <div class="card" style="border-top:6px solid #2F6FD1"><h3>🖥️ 화면 · index.html</h3><p><b>홀</b>. 학생·교직원이 버튼을 누르는 곳</p></div>
+    <div class="card" style="border-top:6px solid var(--orange)"><h3>⚙️ Apps Script · Code.gs</h3><p><b>주방장</b>. 저장하기, 불러오기, 중복 확인</p></div>
+    <div class="card" style="border-top:6px solid #1E7F4F"><h3>📊 구글 시트</h3><p><b>창고</b>. 기록이 쌓이는 곳, 교사만 열어 봄</p></div>
+  </div>
+  <div class="note info" style="margin-top:12px"><b>그래서 안전합니다</b>손님은 창고에 들어가지 않습니다. 시트를 공유하지 않아도 기록은 모이고, 학생은 다른 학생의 신청을 볼 수 없습니다.</div>
+
+  <h2 class="sec">AI에게 잘 부탁하는 5요소</h2>
+  <table class="t">
+    <tr><th style="width:24%">요소</th><th>예시</th></tr>
+    <tr><td>① 역할</td><td>초등학교 업무용 웹앱을 만드는 개발자</td></tr>
+    <tr><td>② 목적·사용자</td><td>학생이 태블릿으로 상담을 신청</td></tr>
+    <tr><td>③ 데이터 구조</td><td>'상담신청' 시트의 열 이름과 순서 ← 가장 중요</td></tr>
+    <tr><td>④ 화면</td><td>큰 버튼, 쉬운 말, 제출 후 안내</td></tr>
+    <tr><td>⑤ 제약</td><td>파일 2개로 나누고, 붙여 넣을 위치까지</td></tr>
+  </table>
+
+  <h2 class="sec">QUIZ 이 정보, AI에 넣어도 될까?</h2>
+  <details><summary>① "상담신청 시트에 학년반, 분류 열이 있어"</summary><div class="dbody"><b style="color:var(--mint-ink)">O 괜찮아요.</b> 시트의 '구조'(열 이름)는 개인정보가 아닙니다.</div></details>
+  <details><summary>② 학생 실명과 고민 내용이 담긴 시트 전체를 붙여 넣기</summary><div class="dbody"><b style="color:var(--rose-ink)">X 안 돼요.</b> 실제 데이터는 넣지 않습니다. 필요하면 가짜 예시 데이터로.</div></details>
+  <details><summary>③ "테스트1, 4-2" 같은 가짜 예시 데이터 3줄</summary><div class="dbody"><b style="color:var(--mint-ink)">O 괜찮아요.</b> 테스트용 가상 데이터는 문제없습니다.</div></details>
+  <details><summary>④ 오류 화면 캡처에 학생 이름 목록이 그대로 보임</summary><div class="dbody"><b style="color:var(--rose-ink)">X 안 돼요.</b> 캡처 전에 이름을 가리거나 테스트 데이터로 바꿔서 보여 줍니다.</div></details>
+
+  <div class="grid2" style="margin-top:18px">
+    <div class="q"><small>기억할 문장</small><p>"AI에게는 '모양'을 알려 주고, '내용'은 주지 않는다"</p></div>
+    <div class="q"><small>개인정보 원칙</small><p>최소 수집 · 가명/익명 · 접근 권한 · 보관 기간</p></div>
+  </div>
+  <p class="small" style="margin-top:10px">참고: 개인정보보호위원회 「생성형 AI 서비스 이용자를 위한 개인정보 보호 가이드」(2026.5.), KISA 「교육분야 가명·익명정보 처리 가이드라인」</p>
+</section>
+
+<!-- ================= 2 실습1 ================= -->
+<section class="ch" id="ch-2" data-i="2" data-name="실습 1 시트 만들기">
+  <div class="chead"><div class="bigno">02</div><div><span class="lvchip" style="background:var(--c2);color:var(--navy)">LV.2 · 3차시</span><h1>실습 1 상담신청 시트 만들기</h1><p class="sub">앱의 절반은 시트 설계입니다. 열부터 정하고 시작해요.</p></div><button class="done-btn" data-done="2">다 했어요</button></div>
+  <div class="twocol">
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div><h3>새 시트 만들기</h3><p>파일 이름은 <b>상담신청_키오스크</b></p><div class="acts"><a class="go" href="https://sheets.new" target="_blank" rel="noopener">📄 새 시트 열기</a></div></div></div>
+      <div class="step"><div class="n">2</div><div><h3>탭 이름 바꾸기</h3><p>아래쪽 '시트1'을 더블클릭 → <b>상담신청</b> (띄어쓰기 없이)</p><div class="acts"><button class="go light" data-copytext="상담신청">📋 '상담신청' 복사</button></div></div></div>
+      <div class="step"><div class="n">3</div><div><h3>1행에 열 이름 붙여 넣기</h3><p>A1 칸을 누르고 붙여 넣으면 여섯 칸에 나뉘어 들어갑니다</p><div class="acts"><button class="go orange" data-copytext="신청일시&#9;학년반&#9;이름&#9;대상&#9;분류&#9;처리상태">📋 열 이름 한 번에 복사</button></div></div></div>
+      <div class="step"><div class="n">4</div><div><h3>Apps Script 열어 두기</h3><p>시트 메뉴 [확장 프로그램 › Apps Script]. 새 탭이 열리면 그대로 두세요.</p></div></div>
+    </div>
+    <div class="steps">
+      <table class="t">
+        <tr><th>열</th><th>누가 채우나</th></tr>
+        <tr><td>신청일시</td><td>앱이 자동</td></tr>
+        <tr><td>학년반</td><td>학생(버튼)</td></tr>
+        <tr><td>이름</td><td>학생(선택) · 비우면 (익명)</td></tr>
+        <tr><td>대상·분류</td><td>학생(버튼)</td></tr>
+        <tr><td>처리상태</td><td>교사 · 대기 → 완료</td></tr>
+      </table>
+      <div class="note warn"><b>⚠️ 한 글자도 다르면 안 돼요</b>탭 이름과 열 이름은 다음 장의 프롬프트와 똑같아야 저장됩니다.</div>
+      <div class="q"><small>생각해 보기</small><p>'처리상태'는 왜 학생이 아니라 교사가 채울까요?</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3 실습2 ================= -->
+<section class="ch" id="ch-3" data-i="3" data-name="실습 2 AI에게 부탁">
+  <div class="chead"><div class="bigno">03</div><div><span class="lvchip" style="background:var(--c3);color:var(--navy)">LV.3 · 3차시</span><h1>실습 2 AI에게 키오스크 부탁하기</h1><p class="sub">왼쪽에서 우리 학교에 맞게 고르면 프롬프트가 바로 바뀝니다.</p></div><button class="done-btn" data-done="3">다 했어요</button></div>
+  <div class="builder">
+    <div class="form" id="kForm">
+      <label>상담 대상 선생님 (쉼표로 구분)<input type="text" id="kTarget" value="담임 선생님, 상담 선생님, 보건 선생님"></label>
+      <label>고민 분류 (쉼표로 구분)<input type="text" id="kCat" value="친구, 공부, 가족, 마음, 기타, 말하기 싫어요"></label>
+      <label>학년반 고르는 방법
+        <select id="kClass"><option value="btn">학년·반 버튼으로 고르기</option><option value="text">직접 입력(예: 4-2)</option></select></label>
+      <label class="tog"><input type="checkbox" id="kAnon" checked>'이름 없이 신청' 버튼 넣기</label>
+      <label class="tog"><input type="checkbox" id="kMemo">하고 싶은 말(선택, 100자) 칸 넣기</label>
+      <label>제출 후 안내 문구<input type="text" id="kThanks" value="선생님이 곧 불러 줄게요"></label>
+      <label class="tog"><input type="checkbox" id="kFun" checked>친근한 디자인(캐릭터·애니메이션·한 화면에 질문 하나)</label>
+      <label class="tog"><input type="checkbox" id="kAdmin" checked>교사용 확인 페이지(?page=admin, 비밀번호, [완료] 버튼)</label>
+      <label>화면<select id="kDevice"><option>교실 태블릿(가로)</option><option>휴대폰</option><option>교실 PC</option></select></label>
+      <div class="note warn" style="font-size:.85rem"><b>메모 칸은 신중하게</b>자세한 고민이 시트에 남습니다. 최소 수집 원칙과 맞는지 생각해 보세요.</div>
+    </div>
+    <div>
+      <div class="code-wrap"><button class="copy" data-copyfrom="kOut">복사</button><div class="code prompt" id="kOut"></div></div>
+      <div class="acts" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <a class="go light" href="https://gemini.google.com" target="_blank" rel="noopener">✨ Gemini</a>
+        <a class="go light" href="https://chatgpt.com" target="_blank" rel="noopener">💬 ChatGPT</a>
+        <a class="go light" href="https://claude.ai" target="_blank" rel="noopener">🟠 Claude</a>
+      </div>
+      <div class="note info" style="margin-top:12px"><b>받은 코드, 바로 쓰기 전에</b>시트 이름 '상담신청'과 열 순서가 코드 안에 그대로 있는지 눈으로 확인하세요.</div>
+    </div>
+  </div>
+  <h2 class="sec">AI가 막힐 때 · 예비 코드</h2>
+  <div class="peek"><span class="bear">🐻</span><div style="flex:1"><b>학생이 부담 없이 누르는 키오스크</b><p class="small">한 화면에 질문 하나 · 큰 색깔 타일 · 통통 튀는 곰 캐릭터 · 완료하면 색종이 🎉</p></div><button class="go orange" data-preview="kc2">👀 미리 보기</button></div>
+  <p class="small" style="margin-bottom:10px">AI 결과가 계속 안 될 때 쓰는 기본 코드입니다. 실습 1의 시트 그대로 동작하고, 교사용 확인 페이지(admin.html)까지 들어 있어요. index.html 맨 아래 '우리 학교에 맞게 바꾸는 곳'에서 학교 이름·반·선생님·분류를 고칠 수 있어요.</p>
+  <div class="tabs" data-tabs="kcode"><button class="on" data-t="kc1">Code.gs</button><button data-t="kc2">index.html</button><button data-t="kc3">admin.html (교사용)</button></div>
+  <div class="code-wrap" data-pane="kc1"><button class="copy" data-copyfrom="kc1">복사</button><div class="code" id="kc1"></div></div>
+  <div class="code-wrap" data-pane="kc2" hidden><button class="copy" data-copyfrom="kc2">복사</button><div class="code" id="kc2"></div></div>
+  <div class="code-wrap" data-pane="kc3" hidden><button class="copy" data-copyfrom="kc3">복사</button><div class="code" id="kc3"></div></div>
+
+  <h2 class="sec">교사용 확인 페이지 · 처리상태를 버튼으로 '완료'</h2>
+  <div class="twocol">
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div><h3>Code.gs 바꾸고 비밀번호 정하기</h3><p>위 Code.gs로 바꾼 뒤 맨 위 <b>ADMIN_PASSWORD = '1234'</b>를 나만 아는 비밀번호로</p></div></div>
+      <div class="step"><div class="n">2</div><div><h3>HTML 파일 하나 더</h3><p>[＋ › HTML] → 이름 <b>admin</b> → 위 admin.html 붙여 넣기</p></div></div>
+      <div class="step"><div class="n">3</div><div><h3>새 버전으로 배포</h3><p>[배포 › 배포 관리 › ✏️ › 새 버전]. 학생용 주소는 그대로예요</p></div></div>
+      <div class="step"><div class="n">4</div><div><h3>주소 끝에 ?page=admin</h3><p>…/exec<b>?page=admin</b> → 비밀번호 → '대기' 신청만 보이고 [완료]를 누르면 시트가 '완료'로</p><div class="acts"><button class="go light" data-copytext="?page=admin">📋 '?page=admin' 복사</button></div></div></div>
+    </div>
+    <div class="steps">
+      <div class="note info"><b>왜 비밀번호를 거나요?</b>키오스크는 '모든 사용자'로 배포해서 주소를 아는 사람은 누구나 들어올 수 있어요. 신청 목록이 보이는 교사용 페이지는 비밀번호로 한 번 더 잠급니다(접근 권한 원칙).</div>
+      <div class="note warn"><b>⚠️ 비밀번호는 Code.gs에만</b>Code.gs는 학생 화면에 보이지 않아요. admin.html이나 index.html에는 비밀번호를 적지 마세요.</div>
+      <div class="q"><small>생각해 보기</small><p>교사용 페이지에 고민 내용까지 보여 줘야 할까요, 분류만으로 충분할까요?</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4 실습3 ================= -->
+<section class="ch" id="ch-4" data-i="4" data-name="실습 3 붙여 넣고 배포">
+  <div class="chead"><div class="bigno">04</div><div><span class="lvchip" style="background:var(--c4);color:var(--navy)">LV.4 · 3차시</span><h1>실습 3 붙여 넣고 웹앱으로 배포</h1><p class="sub">한 단계씩 체크하며 따라오세요.</p></div><button class="done-btn" data-done="4">다 했어요</button></div>
+  <div class="twocol">
+    <div class="steps" id="deploySteps">
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">1</div><div><h3>Code.gs에 붙여 넣기</h3><p>원래 있던 내용을 모두 지우고 AI가 준 Code.gs를 붙여 넣기</p></div></label>
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">2</div><div><h3>HTML 파일 추가</h3><p>[파일 옆 ＋ › HTML] → 이름 <b>index</b> (.html은 자동) → 붙여 넣기</p></div></label>
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">3</div><div><h3>저장하고 배포</h3><p>💾 저장 → [배포 › 새 배포] → 톱니바퀴에서 <b>웹 앱</b> 선택<br>실행 사용자: <b>나</b> · 액세스 권한: 아래 표 참고</p></div></label>
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">4</div><div><h3>권한 승인</h3><p>'확인되지 않은 앱' 경고 → [고급] → [(프로젝트 이름)(으)로 이동] → 허용. <b>내가 만든 스크립트일 때만!</b></p></div></label>
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">5</div><div><h3>주소로 접속해 신청 3번</h3><p>웹 앱 URL(…/exec) 복사 → 새 탭에서 열기 → 신청 3번 → 시트에 3줄 생겼는지 확인</p></div></label>
+      <p class="small">단계를 누르면 완료 표시가 됩니다.</p>
+    </div>
+    <div class="steps">
+      <table class="t">
+        <tr><th>액세스 권한</th><th>언제</th></tr>
+        <tr><td>모든 사용자</td><td>교실 태블릿처럼 로그인 없이 쓸 때. 주소는 비공개로</td></tr>
+        <tr><td>조직 내 사용자</td><td>같은 학교·교육청 계정만. 교직원용에 적합</td></tr>
+      </table>
+      <div class="note info"><b>실행 사용자 '나'의 의미</b>저장은 교사의 권한으로 일어납니다. 시트를 공유하지 않아도 기록이 쌓여요.</div>
+      <div class="q"><small>생각해 보기</small><p>키오스크 주소를 QR로 공개할까, 교실 태블릿에만 둘까?</p></div>
+    </div>
+  </div>
+
+  <h2 class="sec">오류 해결 도우미</h2>
+  <details><summary>코드를 고쳤는데 화면이 그대로예요</summary><div class="dbody">예전 버전이 배포 중입니다. [배포 › 배포 관리 › ✏️ 수정 › 버전: 새 버전 › 배포]. '새 배포'를 누르면 주소가 바뀌니 주의!</div></details>
+  <details><summary>신청했는데 시트가 비어 있어요</summary><div class="dbody">탭 이름이 코드와 다릅니다. '상담신청' 철자와 띄어쓰기를 확인하세요. 시트를 새로 만들었다면 그 시트의 [확장 프로그램 › Apps Script]에서 만든 스크립트인지도 확인.</div></details>
+  <details><summary>신청 시간이 9시간 달라요</summary><div class="dbody">스크립트 시간대 문제입니다. Apps Script 왼쪽 ⚙️ [프로젝트 설정 › 시간대]를 <b>(GMT+09:00) 서울</b>로 바꾸고 새 버전으로 배포.</div></details>
+  <details><summary>동료가 "권한이 없습니다"라고 해요</summary><div class="dbody">배포할 때 액세스 권한이 '나만'으로 되어 있습니다. [배포 관리]에서 액세스 범위를 다시 고르세요.</div></details>
+  <details><summary>빨간 오류 문구가 나와요</summary><div class="dbody">문구를 그대로 복사해서 AI에게 "이렇게 나와"라고 보내세요. 아래 버튼으로 부탁 문장을 복사할 수 있어요.<div style="margin-top:10px"><button class="go light" data-copytext="방금 준 코드를 배포했더니 아래 오류가 나와. 원인을 쉽게 설명하고, 고친 전체 코드를 다시 줘. 시트 이름은 '상담신청', 열은 [신청일시, 학년반, 이름, 대상, 분류, 처리상태] 순서야.&#10;오류: (여기에 오류 문구 붙여 넣기)">📋 오류 부탁 문장 복사</button></div></div></details>
+  <details><summary>학교 계정에서 Apps Script 메뉴가 안 보여요</summary><div class="dbody">관리자가 막아 둔 경우입니다. 개인 구글 계정으로 시트를 새로 만들어 진행하세요.</div></details>
+</section>
+
+<!-- ================= 5 실습4 ================= -->
+<section class="ch" id="ch-5" data-i="5" data-name="실습 4 시트 세 장">
+  <div class="chead"><div class="bigno">05</div><div><span class="lvchip" style="background:var(--c5);color:#0E5C50">LV.5 · 4차시</span><h1>실습 4 연수 등록부 시트 세 장</h1><p class="sub">명단(전체) − 등록(한 사람) = 미등록자. 이 뺄셈이 '확인하기'를 없앱니다.</p></div><button class="done-btn" data-done="5">다 했어요</button></div>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><div><h3>새 시트 만들기 · 이름 '연수등록부'</h3><div class="acts"><a class="go" href="https://sheets.new" target="_blank" rel="noopener">📄 새 시트 열기</a></div></div></div>
+    <div class="step"><div class="n">2</div><div><h3>탭 ① 명단</h3><p>탭 이름 <b>명단</b> → A1에 붙여 넣기. 실습은 꼭 가짜 이름으로!</p><div class="acts"><button class="go orange" data-copytext="이름&#9;부서&#10;테스트1&#9;1학년&#10;테스트2&#9;3학년&#10;테스트3&#9;5학년&#10;테스트4&#9;교무&#10;테스트5&#9;행정">📋 열 이름 + 가짜 명단 5명 복사</button></div></div></div>
+    <div class="step"><div class="n">3</div><div><h3>탭 ② 등록</h3><p>탭 추가(＋) → 이름 <b>등록</b> → A1에 붙여 넣기</p><div class="acts"><button class="go orange" data-copytext="등록일시&#9;연수명&#9;이름&#9;이수시간">📋 열 이름 복사</button></div></div></div>
+    <div class="step"><div class="n">4</div><div><h3>탭 ③ 연수목록</h3><p>탭 추가 → 이름 <b>연수목록</b> → A1에 붙여 넣기. 마감일은 날짜 형식으로</p><div class="acts"><button class="go orange" data-copytext="연수명&#9;마감일&#10;교원 개인정보 보호 연수&#9;2026-12-31&#10;학교폭력 예방 연수&#9;2026-12-31">📋 열 이름 + 예시 연수 2개 복사</button></div></div></div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="note warn"><b>⚠️ 탭 이름 세 개 확인</b>명단 · 등록 · 연수목록. 다음 장 프롬프트와 똑같아야 합니다.</div>
+    <div class="q"><small>생각해 보기</small><p>명단에 '부서'는 꼭 필요할까요? 빼면 무엇이 달라질까요?</p></div>
+  </div>
+</section>
+
+<!-- ================= 6 실습5 ================= -->
+<section class="ch" id="ch-6" data-i="6" data-name="실습 5 등록부 부탁">
+  <div class="chead"><div class="bigno">06</div><div><span class="lvchip" style="background:var(--c6);color:#0E5C50">LV.6 · 4차시</span><h1>실습 5 등록 화면 + 관리 화면 부탁하기</h1><p class="sub">이번엔 스스로! 기능을 고르고 프롬프트를 복사해 AI에게 보내세요.</p></div><button class="done-btn" data-done="6">다 했어요</button></div>
+  <div class="builder">
+    <div class="form">
+      <label class="tog"><input type="checkbox" id="rDup" checked>같은 연수·같은 이름이면 "이미 등록되었습니다"</label>
+      <label class="tog"><input type="checkbox" id="rHours" checked>이수시간 입력받기</label>
+      <label class="tog"><input type="checkbox" id="rAdmin" checked>관리 화면(?page=admin) · 미등록자 빨간색</label>
+      <label class="tog"><input type="checkbox" id="rDeadline">마감일 지난 연수는 목록에서 숨기기</label>
+      <label class="tog"><input type="checkbox" id="rOwner">관리 화면은 내 계정으로 접속할 때만 보이기</label>
+      <label>등록 화면 제목<input type="text" id="rTitle" value="교직원 온라인 연수 등록부"></label>
+      <div class="note info" style="font-size:.85rem"><b>도전</b>체크를 더 켤수록 AI가 실수할 확률도 올라갑니다. 다음 장에서 꼭 검증!</div>
+    </div>
+    <div>
+      <div class="code-wrap"><button class="copy" data-copyfrom="rOut">복사</button><div class="code prompt" id="rOut"></div></div>
+      <div class="note warn" style="margin-top:12px"><b>배포는 실습 3과 같아요</b>Code.gs + index.html + admin.html 세 파일. 관리 화면은 주소 끝에 <b>?page=admin</b>을 붙여 열기.</div>
+    </div>
+  </div>
+  <h2 class="sec">AI가 막힐 때 · 예비 코드</h2>
+  <p class="small" style="margin-bottom:10px">기본 기능(명단 불러오기, 중복 막기, 마감일 지난 연수 숨기기, 관리 화면)이 들어 있는 코드입니다.</p>
+  <div class="tabs" data-tabs="rcode"><button class="on" data-t="rc1">Code.gs</button><button data-t="rc2">index.html</button><button data-t="rc3">admin.html</button></div>
+  <div class="code-wrap" data-pane="rc1"><button class="copy" data-copyfrom="rc1">복사</button><div class="code" id="rc1"></div></div>
+  <div class="code-wrap" data-pane="rc2" hidden><button class="copy" data-copyfrom="rc2">복사</button><div class="code" id="rc2"></div></div>
+  <div class="code-wrap" data-pane="rc3" hidden><button class="copy" data-copyfrom="rc3">복사</button><div class="code" id="rc3"></div></div>
+</section>
+
+<!-- ================= 7 실습6 ================= -->
+<section class="ch" id="ch-7" data-i="7" data-name="실습 6 검증하기">
+  <div class="chead"><div class="bigno">07</div><div><span class="lvchip" style="background:var(--c7);color:#0E5C50">LV.7 · 4차시</span><h1>실습 6 AI가 만든 앱, 믿어도 될까?</h1><p class="sub">공유하기 전에 직접 눌러 보고 통과/실패를 표시하세요. 실패하면 다시 부탁할 문장이 만들어집니다.</p></div><button class="done-btn" data-done="7">다 했어요</button></div>
+  <div class="steps" id="tests">
+    <div class="test" data-k="t1"><div class="body"><h3>① 정상 등록</h3><p>테스트1로 등록 → 등록 시트에 한 줄, 시간·열 순서가 맞나?</p></div><div class="pf"><button class="p">통과</button><button class="f">실패</button></div></div>
+    <div class="test" data-k="t2"><div class="body"><h3>② 같은 사람 한 번 더</h3><p>테스트1로 같은 연수 다시 등록 → "이미 등록되었습니다"가 뜨고 저장 안 되나?</p></div><div class="pf"><button class="p">통과</button><button class="f">실패</button></div></div>
+    <div class="test" data-k="t3"><div class="body"><h3>③ 빈칸으로 제출</h3><p>이수시간을 비우고 등록 → 막아 주나?</p></div><div class="pf"><button class="p">통과</button><button class="f">실패</button></div></div>
+    <div class="test" data-k="t4"><div class="body"><h3>④ 관리 화면 숫자</h3><p>?page=admin → 등록 1명 / 미등록 4명이 맞나?</p></div><div class="pf"><button class="p">통과</button><button class="f">실패</button></div></div>
+    <div class="test" data-k="t5"><div class="body"><h3>⑤ 다른 계정으로 접속</h3><p>옆 선생님께 주소를 보내 접속되는지 확인</p></div><div class="pf"><button class="p">통과</button><button class="f">실패</button></div></div>
+  </div>
+  <div id="testResult" style="margin-top:16px"></div>
+  <h2 class="sec">공유 전 마지막 점검</h2>
+  <div class="grid2">
+    <div class="card"><h3>👩‍🏫 교사가 확인</h3><ul style="padding-left:18px"><li>테스트 데이터 지우고 실제 명단 넣기</li><li>시트에 필요 없는 열이 없나</li><li>시트 공유 설정은 '나만'인가</li></ul></div>
+    <div class="card"><h3>🤖 AI에게 맡길 것</h3><ul style="padding-left:18px"><li>오류 해석과 수정 코드</li><li>화면 디자인·문구</li><li>기능 추가 — 단, 실제 명단은 보여 주지 않기</li></ul></div>
+  </div>
+  <div class="note ok" style="margin-top:14px"><b>공유할 때</b>고친 뒤에는 [배포 관리 › 새 버전]으로. '새 배포'를 누르면 주소가 바뀝니다.</div>
+</section>
+
+<!-- ================= 8 Netlify ================= -->
+<section class="ch" id="ch-8" data-i="8" data-name="실습 7–8 Netlify 배포">
+  <div class="chead"><div class="bigno">08</div><div><span class="lvchip" style="background:var(--c8);color:#0E5C50">LV.8 · 4차시</span><h1>실습 7–8 Netlify로 학교에 배포하기</h1><p class="sub">등록 화면만 Netlify로 이사하고, 저장은 구글 시트에 그대로 둡니다.</p></div><button class="done-btn" data-done="8">다 했어요</button></div>
+
+  <h2 class="sec">왜 Netlify까지 배포할까?</h2>
+  <div class="grid2">
+    <div class="card"><h3>⚙️ Apps Script 주소만 쓸 때</h3><p style="font-family:ui-monospace,monospace;font-size:.82rem;color:var(--navy);margin:4px 0 8px">script.google.com/macros/s/AKfycbx…(70자 넘게)…/exec</p><ul style="padding-left:18px"><li>주소가 길어 메신저·QR이 지저분해요</li><li>개인 계정이면 화면 위에 'Apps Script 사용자가 만든 앱' 안내가 붙어요</li><li>화면이 구글의 틀 안에 들어가 모양이 제한돼요</li></ul></div>
+    <div class="card" style="border:2px solid #2F6FD1"><h3>🌐 Netlify로 올렸을 때</h3><p style="font-weight:900;color:var(--navy);margin:4px 0 8px">jisan-training.netlify.app</p><ul style="padding-left:18px"><li>짧고 기억하기 쉬운 주소, 깔끔한 QR</li><li>안내 띠 없이 우리 학교 앱처럼 보여요</li><li>만든 앱들을 한 계정에서 모아 관리해요</li></ul></div>
+  </div>
+  <div class="note info" style="margin-top:12px"><b>꼭 해야 하나요?</b>교무실 몇 분만 쓰는 앱이면 Apps Script 주소로도 충분해요. 학교 전체·학부모·학생이 오래 쓸 앱이라면 Netlify로 올리는 것이 좋아요. 데이터는 어느 쪽이든 선생님 구글 드라이브에 남습니다.</div>
+
+  <h2 class="sec">3층 건물에서 '홀'만 이사</h2>
+  <div class="grid3">
+    <div class="card" style="border-top:6px solid #2F6FD1"><h3>🌐 등록 화면 → Netlify</h3><p><b>이사 가요</b>. index.html 한 파일</p></div>
+    <div class="card" style="border-top:6px solid var(--orange)"><h3>⚙️ Apps Script</h3><p><b>그대로</b>. 명단 보내 주기, 등록 저장, 관리 화면(?page=admin)</p></div>
+    <div class="card" style="border-top:6px solid #1E7F4F"><h3>📊 구글 시트</h3><p><b>그대로</b>. 명단 · 등록 · 연수목록</p></div>
+  </div>
+  <div class="note warn" style="margin-top:12px"><b>관리 화면은 이사하지 않아요</b>미등록자 명단이 보이는 화면은 구글 안에 두고 담당자만 엽니다(접근 권한 원칙).</div>
+
+  <h2 class="sec">실습 7 Netlify용으로 화면 따로 받기</h2>
+  <div class="code-wrap"><button class="copy" data-copyfrom="nOut">복사</button><div class="code prompt" id="nOut">지금 만든 연수 등록부의 등록 화면만 Netlify에 올리고 싶어. 구조를 이렇게 바꿔 줘.
+- Code.gs: GET ?action=init → {names, trainings} JSON, POST(JSON 본문 {training, name, hours}) → {ok, message} JSON. 관리 화면(?page=admin)은 지금처럼 Apps Script에 그대로.
+- 등록 화면: Netlify에 올릴 index.html 한 파일. 맨 위 const SCRIPT_URL = '웹앱 주소' 한 줄만 바꾸면 되게. POST는 Content-Type을 text/plain으로 보내 CORS 오류가 나지 않게.
+- 시트 구조는 그대로: 명단(이름, 부서), 등록(등록일시, 연수명, 이름, 이수시간), 연수목록(연수명, 마감일).
+- Apps Script 새 버전 배포 → index.html 저장 → Netlify Drop 순서로 알려 줘.</div></div>
+  <div class="note warn" style="margin-top:12px"><b>⚠️ 액세스는 '모든 사용자'</b>'조직 내 사용자'로 배포하면 Netlify 화면에서 요청이 막혀요. 대신 Apps Script 주소는 화면 코드 안에만 두고 따로 공유하지 않아요.</div>
+
+  <h2 class="sec">AI가 막힐 때 · Netlify용 예비 코드</h2>
+  <p class="small" style="margin-bottom:10px">실습 4의 시트 그대로 동작합니다. Code.gs는 Apps Script에, index.html은 Netlify에 올리고, admin.html은 실습 5 것을 그대로 둬요.</p>
+  <div class="tabs" data-tabs="ncode"><button class="on" data-t="nc1">Code.gs (Apps Script)</button><button data-t="nc2">index.html (Netlify)</button></div>
+  <div class="code-wrap" data-pane="nc1"><button class="copy" data-copyfrom="nc1">복사</button><div class="code" id="nc1"></div></div>
+  <div class="code-wrap" data-pane="nc2" hidden><button class="copy" data-copyfrom="nc2">복사</button><div class="code" id="nc2"></div></div>
+
+  <h2 class="sec">실습 8 Netlify Drop으로 올리기</h2>
+  <div class="twocol">
+    <div class="steps" id="netlifySteps">
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">1</div><div><h3>Apps Script 새 버전 배포</h3><p>새 Code.gs 붙여 넣기 → [배포 관리 › 수정 › 새 버전]. 액세스 <b>모든 사용자</b> → 웹 앱 URL 복사</p></div></label>
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">2</div><div><h3>폴더 만들고 index.html 저장</h3><p>바탕화면에 폴더 → 메모장에 index.html 붙여 넣기 → SCRIPT_URL 자리에 URL → '모든 파일', UTF-8로 <b>index.html</b> 저장</p></div></label>
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">3</div><div><h3>Netlify 로그인 후 드롭</h3><p>폴더째 끌어다 놓기 → 몇 초 뒤 ○○.netlify.app 주소 생성</p><div class="acts"><a class="go" href="https://app.netlify.com/drop" target="_blank" rel="noopener">🌐 Netlify Drop 열기</a></div></div></label>
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">4</div><div><h3>프로젝트 이름 바꾸기</h3><p>설정에서 이름 변경 → 예: jisan-training.netlify.app</p></div></label>
+      <label class="step"><input type="checkbox" style="display:none"><div class="n">5</div><div><h3>새 주소로 테스트 다시</h3><p>정상 · 중복 · 빈칸 → 등록 시트에 들어가는지, 관리 화면 숫자가 맞는지</p></div></label>
+      <p class="small">단계를 누르면 완료 표시가 됩니다.</p>
+    </div>
+    <div class="steps">
+      <div class="note warn"><b>⚠️ 꼭 로그인한 뒤 드롭</b>로그인 없이 올리면 임시 주소가 되고, 1시간 안에 가입해 등록(claim)하지 않으면 삭제돼요.</div>
+      <div class="note info"><b>고칠 때는 두 곳</b>화면 → 프로젝트 화면의 배포 영역에 폴더 다시 드롭<br>저장 방식 → Apps Script [배포 관리 › 새 버전]</div>
+      <div class="q"><small>생각해 보기</small><p>Apps Script에서 '새 배포'를 누르면 Netlify 화면은 왜 고장 날까요?</p></div>
+    </div>
+  </div>
+
+  <h2 class="sec">Netlify 오류 해결 도우미</h2>
+  <details><summary>Netlify 주소로 들어가면 빈 화면이나 404가 떠요</summary><div class="dbody">폴더 안 파일 이름이 정확히 <b>index.html</b>인지 확인하세요. 메모장이 'index.html.txt'로 저장했을 수 있어요.</div></details>
+  <details><summary>연수·이름 목록이 안 떠요</summary><div class="dbody">SCRIPT_URL이 '…/exec'로 끝나는 웹 앱 URL인지, 앞뒤 따옴표가 지워지지 않았는지 확인하세요. Apps Script 액세스가 '모든 사용자'인지도 확인.</div></details>
+  <details><summary>"CORS" 빨간 오류가 나요</summary><div class="dbody">POST를 보낼 때 Content-Type을 text/plain으로 보내야 해요. AI에게 "CORS 오류가 나. POST를 text/plain으로 보내게 고쳐 줘"라고 부탁하세요. F12 › Console의 빨간 문구를 함께 붙여 넣으면 더 정확해요.</div></details>
+  <details><summary>Code.gs를 고쳤는데 그대로예요</summary><div class="dbody">Apps Script [배포 관리 › 수정 › 새 버전]으로 올려야 반영돼요. '새 배포'는 주소가 바뀌니 누르지 마세요.</div></details>
+  <details><summary>다음 날 사이트가 사라졌어요</summary><div class="dbody">로그인하지 않고 드롭해서 임시 사이트가 된 경우예요. 로그인한 뒤 같은 폴더를 다시 드롭하세요.</div></details>
+</section>
+
+<!-- ================= 9 적용 ================= -->
+<section class="ch" id="ch-9" data-i="9" data-name="내 업무에 적용하기">
+  <div class="chead"><div class="bigno">09</div><div><span class="lvchip" style="background:var(--c9);color:var(--mint-ink)">LV.9 · 정리</span><h1>내 업무에 적용하기</h1><p class="sub">다음에 만들 앱을 적으면 첫 프롬프트가 만들어집니다.</p></div><button class="done-btn" data-done="9">다 했어요</button></div>
+  <div class="builder">
+    <div class="form">
+      <label>앱 이름<input type="text" id="aName" placeholder="예: 보건실 방문 키오스크"></label>
+      <label>없앨 가짜 일<select id="aFake"><option>옮겨 적기</option><option>취합하기</option><option>확인하기</option></select></label>
+      <label>누가 쓰나요?<input type="text" id="aUser" placeholder="예: 학생이 보건실 앞 태블릿으로"></label>
+      <label>시트 이름<input type="text" id="aSheet" placeholder="예: 방문기록"></label>
+      <label>열 이름 (쉼표로 구분)<input type="text" id="aCols" placeholder="예: 방문일시, 학년반, 증상, 조치"></label>
+      <label>받지 않을 정보<input type="text" id="aNo" placeholder="예: 이름 대신 학년반만"></label>
+      <label>테스트 3건<textarea id="aTest" placeholder="예: 정상 방문 1건, 같은 학생 2번, 빈칸 제출"></textarea></label>
+    </div>
+    <div>
+      <div class="code-wrap"><button class="copy" data-copyfrom="aOut">복사</button><div class="code prompt" id="aOut"></div></div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="q"><small>아이디어</small><p>보건실 방문 · 방과후 출석 · 교구 대여 · 동의서 회수</p></div>
+        <div class="q"><small>기억할 문장</small><p>좋은 업무 앱은 옮겨 적는 일을 없애는 앱</p></div>
+      </div>
+    </div>
+  </div>
+  <h2 class="sec">사례 공유 · 강사의 선생님 앱 모음</h2>
+  <a class="card" href="https://teacherappsmum.netlify.app/" target="_blank" rel="noopener" style="text-decoration:none;display:flex;gap:18px;align-items:center;border:2px solid var(--orange)">
+    <div style="font-size:2.4rem">🧰</div>
+    <div><h3>선생님 앱 모음 · 직접 만든 도구 25개</h3><p>수업용 15 · 행사용 4 · 키오스크 2 · 업무용 8. 오늘 만든 상담 키오스크와 연수등록부의 실제 운영 버전도 있어요. 우리 학교에 가져가고 싶은 앱을 하나 골라 보세요.</p><p style="color:var(--navy);font-weight:700;margin-top:6px">teacherappsmum.netlify.app ↗</p></div>
+  </a>
+
+  <h2 class="sec">오늘을 돌아보며</h2>
+  <div class="grid3">
+    <div class="card" style="border-top:6px solid #1E7F4F"><h3>👍 잘된 점</h3><p>오늘 만든 앱에서 가장 마음에 드는 부분</p></div>
+    <div class="card" style="border-top:6px solid var(--orange)"><h3>🛠️ 개선할 점</h3><p>우리 학교에 맞게 바꾸고 싶은 부분</p></div>
+    <div class="card" style="border-top:6px solid #2F6FD1"><h3>📅 다음 계획</h3><p>다음 주에 실제로 써 볼 업무 하나</p></div>
+  </div>
+</section>
+
+<div class="pn"><a id="prevA" href="#"><small>이전</small><b id="prevT"></b></a><a id="nextA" class="next" href="#"><small>다음</small><b id="nextT"></b></a></div>
+</main>
+</div>
+<textarea id="tpl-kc2" hidden><!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Gowun Dodum','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:#EAF5F1;color:#1F2A44;min-height:100vh;display:flex;justify-content:center;padding:18px}
+  .wrap{width:100%;max-width:760px;display:flex;flex-direction:column;gap:14px}
+  .top{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#4A5568}
+  .dots{display:flex;gap:6px}
+  .dots i{width:9px;height:9px;border-radius:50%;background:#CFE3DB;transition:all .3s}
+  .dots i.on{background:#F47B3A;width:22px;border-radius:9px}
+  h1,h2,.tile b,.big,.btn{font-family:'Jua',sans-serif;font-weight:400}
+  .screen{display:none;flex-direction:column;gap:16px;animation:pop .35s cubic-bezier(.2,1.4,.4,1) both}
+  .screen.on{display:flex}
+  @keyframes pop{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+  @keyframes wave{0%,100%{transform:rotate(0)}25%{transform:rotate(18deg)}75%{transform:rotate(-12deg)}}
+  .card{background:#fff;border:3px dashed #CFE3DB;border-radius:28px;padding:46px 28px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}
+  .mascot{font-size:96px;display:inline-block;animation:bob 2.4s ease-in-out infinite}
+  .hand{display:inline-block;font-size:44px;animation:wave 1.6s ease-in-out infinite;transform-origin:70% 80%}
+  .card h1{font-size:36px;line-height:1.3}
+  .card p{font-size:17px;color:#5E677A;line-height:1.6}
+  .btn{border:0;cursor:pointer;font-size:28px;color:#fff;background:#F47B3A;padding:16px 44px;border-radius:999px;box-shadow:0 6px 0 #C85A1F;transition:transform .1s,box-shadow .1s}
+  .btn:active{transform:translateY(5px);box-shadow:0 1px 0 #C85A1F}
+  .btn.ghost{background:#fff;color:#1F2A44;box-shadow:0 4px 0 #CFE3DB;border:2px solid #CFE3DB;font-size:20px;padding:10px 22px}
+  h2{font-size:30px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .grid.two{grid-template-columns:repeat(2,1fr)}
+  .tile{border:0;cursor:pointer;border-radius:24px;min-height:140px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-family:inherit;box-shadow:0 7px 0 rgba(0,0,0,.18);transition:transform .12s,box-shadow .12s;animation:pop .4s cubic-bezier(.2,1.4,.4,1) both}
+  .tile:active{transform:translateY(6px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
+  .tile b{font-size:46px;line-height:1}
+  .tile span{font-size:19px;font-weight:700}
+  .tile .emo{font-size:46px;line-height:1}
+  .tile.dark{color:#3B2A00}
+  .nav{display:flex;justify-content:space-between}
+  input{font-family:inherit;font-size:24px;padding:16px 18px;border:3px solid #CFE3DB;border-radius:18px;width:100%;text-align:center;background:#fff}
+  input:focus{outline:none;border-color:#F47B3A}
+  .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .confetti{position:fixed;top:-20px;width:12px;height:18px;border-radius:3px;pointer-events:none;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.9}}
+  .err{color:#C8342B;font-size:17px;min-height:22px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span id="school"></span><div class="dots" id="dots"></div></div>
+
+  <!-- 0 시작 -->
+  <div class="screen on" data-step="0">
+    <div class="card">
+      <div><span class="mascot">🐻</span><span class="hand">👋</span></div>
+      <h1>선생님과 이야기하고 싶나요?</h1>
+      <p>버튼만 누르면 돼요.<br>내가 고른 내용은 선생님만 볼 수 있어요.</p>
+      <button class="btn" onclick="go(1)">상담 신청하기</button>
+    </div>
+  </div>
+
+  <!-- 1 학년 -->
+  <div class="screen" data-step="1">
+    <h2>나는 몇 학년인가요?</h2>
+    <div class="grid" id="gradeGrid"></div>
+  </div>
+
+  <!-- 2 반 -->
+  <div class="screen" data-step="2">
+    <h2>몇 반인가요?</h2>
+    <div class="grid" id="classGrid"></div>
+  </div>
+
+  <!-- 3 누구와 -->
+  <div class="screen" data-step="3">
+    <h2>누구와 이야기하고 싶나요?</h2>
+    <div class="grid" id="targetGrid"></div>
+  </div>
+
+  <!-- 4 어떤 이야기 -->
+  <div class="screen" data-step="4">
+    <h2>어떤 이야기인가요?</h2>
+    <div class="grid" id="catGrid"></div>
+  </div>
+
+  <!-- 5 이름 -->
+  <div class="screen" data-step="5">
+    <div class="card">
+      <span class="mascot" style="font-size:72px">📝</span>
+      <h1>이름을 알려 줄래요?</h1>
+      <p>쓰지 않아도 괜찮아요. 선생님이 반에서 조용히 불러 줄게요.</p>
+      <input id="name" maxlength="10" placeholder="이름 (선택)">
+      <div class="err" id="err"></div>
+      <div class="row">
+        <button class="btn ghost" onclick="send(true)">이름 없이 신청할래요</button>
+        <button class="btn" id="sendBtn" onclick="send(false)">신청하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 완료 -->
+  <div class="screen" data-step="6">
+    <div class="card">
+      <span class="mascot">🐻</span>
+      <h1>신청 완료!</h1>
+      <p id="thanks">선생님이 곧 불러 줄게요 😊<br>용기 내서 신청해 줘서 고마워요.</p>
+    </div>
+  </div>
+
+  <div class="nav" id="nav" style="display:none">
+    <button class="btn ghost" onclick="back()">← 뒤로</button>
+    <button class="btn ghost" onclick="reset()">처음으로</button>
+  </div>
+</div>
+
+<script>
+  // ▼ 우리 학교에 맞게 바꾸는 곳
+  var SCHOOL = '우리 학교';
+  var CLASSES = ['1반', '2반', '3반', '4반'];
+  var TARGETS = [['🧑‍🏫', '담임 선생님'], ['💬', '상담 선생님'], ['🩺', '보건 선생님']];
+  var CATEGORIES = [['🤝', '친구'], ['📚', '공부'], ['🏠', '가족'], ['💗', '마음'], ['✨', '기타'], ['🤐', '말하기 싫어요']];
+  var COLORS = ['#FF6B6B', '#FF9F43', '#F7C531', '#3FBF7F', '#3FA3E8', '#9B6BE5'];
+
+  var pick = {}, step = 0, idleTimer;
+  document.getElementById('school').textContent = SCHOOL;
+  var dots = document.getElementById('dots');
+  for (var d = 0; d < 5; d++) dots.appendChild(document.createElement('i'));
+
+  function tiles(id, items, key, next) {
+    var box = document.getElementById(id);
+    items.forEach(function (it, i) {
+      var b = document.createElement('button');
+      b.className = 'tile' + (COLORS[i % 6] === '#F7C531' ? ' dark' : '');
+      b.style.background = COLORS[i % 6];
+      b.style.animationDelay = (i * 60) + 'ms';
+      var emo = it.emo ? '<span class="emo">' + it.emo + '</span>' : '<b>' + it.big + '</b>';
+      b.innerHTML = emo + '<span>' + it.label + '</span>';
+      b.onclick = function () { pick[key] = it.value; go(next); };
+      box.appendChild(b);
+    });
+  }
+  tiles('gradeGrid', [1,2,3,4,5,6].map(function (g) { return { big: g, label: '학년', value: g }; }), 'grade', 2);
+  tiles('classGrid', CLASSES.map(function (c) { return { big: c.replace('반', ''), label: '반', value: c.replace('반', '') }; }), 'cls', 3);
+  tiles('targetGrid', TARGETS.map(function (t) { return { emo: t[0], label: t[1], value: t[1] }; }), 'target', 4);
+  tiles('catGrid', CATEGORIES.map(function (t) { return { emo: t[0], label: t[1], value: t[1] }; }), 'category', 5);
+
+  function go(n) {
+    step = n;
+    document.querySelectorAll('.screen').forEach(function (s) { s.classList.toggle('on', +s.dataset.step === n); });
+    document.getElementById('nav').style.display = (n >= 1 && n <= 5) ? 'flex' : 'none';
+    dots.style.visibility = (n >= 1 && n <= 5) ? 'visible' : 'hidden';
+    dots.querySelectorAll('i').forEach(function (dot, i) { dot.classList.toggle('on', i === n - 1); });
+    document.getElementById('err').textContent = '';
+    clearTimeout(idleTimer);
+    if (n > 0 && n < 6) idleTimer = setTimeout(reset, 60000); // 1분 동안 아무것도 안 누르면 처음으로
+  }
+  function back() { go(Math.max(0, step - 1)); }
+  function reset() { pick = {}; document.getElementById('name').value = ''; go(0); }
+
+  function send(anonymous) {
+    var btn = document.getElementById('sendBtn');
+    if (!pick.grade || !pick.cls || !pick.target || !pick.category) { document.getElementById('err').textContent = '앞에서 고르지 않은 칸이 있어요.'; return; }
+    btn.disabled = true; btn.textContent = '보내는 중...';
+    google.script.run
+      .withSuccessHandler(function () {
+        btn.disabled = false; btn.textContent = '신청하기';
+        go(6); confetti();
+        setTimeout(reset, 5000);
+      })
+      .withFailureHandler(function (e) {
+        btn.disabled = false; btn.textContent = '신청하기';
+        document.getElementById('err').textContent = '저장하지 못했어요. 선생님께 알려 주세요. (' + e.message + ')';
+      })
+      .submitRequest({
+        classroom: pick.grade + '-' + pick.cls,
+        name: anonymous ? '' : document.getElementById('name').value,
+        target: pick.target,
+        category: pick.category
+      });
+  }
+
+  function confetti() {
+    for (var i = 0; i < 40; i++) {
+      var c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = COLORS[i % 6];
+      c.style.animationDuration = (1.8 + Math.random() * 1.6) + 's';
+      c.style.animationDelay = (Math.random() * 0.4) + 's';
+      document.body.appendChild(c);
+      setTimeout(function (el) { el.remove(); }, 4000, c);
+    }
+  }
+</script>
+</body>
+</html>
+</textarea>
+<div id="pv" class="pv" hidden><div class="pv-box"><div class="pv-bar"><b>👀 키오스크 미리 보기</b><span class="small">실제로 저장되지는 않아요</span><button id="pvClose">닫기 ✕</button></div><iframe id="pvFrame" title="키오스크 미리 보기"></iframe></div></div>
+<footer>AI·디지털지식나눔교사 2기 · 구글 시트 연동 업무 앱 만들기 실습실 · 화면과 메뉴 위치는 바뀔 수 있어요(2026년 11월 기준)</footer>
+
+<div class="endbar"><button id="pPrev">← 이전</button><span id="pCount"></span><button id="pNext">다음 →</button><button id="pEnd">끝내기 (Esc)</button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+/* ---------- 예비 코드 ---------- */
+var KC1=[
+"// ▼ 교사용 확인 페이지 비밀번호: 꼭 바꾸세요 (이 파일은 학생에게 보이지 않아요)",
+"const ADMIN_PASSWORD = '1234';",
+"",
+"function doGet(e) {",
+"  var page = (e && e.parameter && e.parameter.page === 'admin') ? 'admin' : 'index';",
+"  return HtmlService.createHtmlOutputFromFile(page)",
+"    .setTitle(page === 'admin' ? '상담 신청 확인' : '상담 신청')",
+"    .addMetaTag('viewport', 'width=device-width, initial-scale=1');",
+"}",
+"",
+"function getSheet_() {",
+"  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('상담신청');",
+"  if (!sheet) throw new Error(\"'상담신청' 시트를 찾을 수 없어요.\");",
+"  return sheet;",
+"}",
+"",
+"function submitRequest(data) {",
+"  var name = String(data.name || '').trim() || '(익명)';",
+"  getSheet_().appendRow([new Date(), data.classroom, name, data.target, data.category, '대기']);",
+"  return true;",
+"}",
+"",
+"function checkPassword_(pw) {",
+"  if (String(pw) !== ADMIN_PASSWORD) throw new Error('비밀번호가 맞지 않아요.');",
+"}",
+"",
+"// 처리상태가 '대기'인 신청만 모아서 보내기",
+"function getPending(pw) {",
+"  checkPassword_(pw);",
+"  var values = getSheet_().getDataRange().getValues();",
+"  var list = [];",
+"  for (var i = 1; i < values.length; i++) {",
+"    var r = values[i];",
+"    if (String(r[5]).trim() !== '대기') continue;",
+"    var when = (r[0] instanceof Date)",
+"      ? Utilities.formatDate(r[0], 'Asia/Seoul', 'M/d HH:mm')",
+"      : String(r[0]);",
+"    list.push({ row: i + 1, when: when, classroom: String(r[1]), name: String(r[2]),",
+"                target: String(r[3]), category: String(r[4]) });",
+"  }",
+"  return list;",
+"}",
+"",
+"// [완료] 버튼: 그 줄의 처리상태(F열)를 '완료'로 바꾸기",
+"function markDone(pw, row) {",
+"  checkPassword_(pw);",
+"  var r = Number(row);",
+"  if (!(r >= 2)) throw new Error('잘못된 줄 번호예요.');",
+"  var cell = getSheet_().getRange(r, 6);",
+"  if (String(cell.getValue()).trim() !== '대기') {",
+"    throw new Error('이미 처리되었거나 시트가 바뀌었어요. 새로고침해 주세요.');",
+"  }",
+"  cell.setValue('완료');",
+"  return true;",
+"}"].join("\n");
+
+var KC3=[
+"<!DOCTYPE html>",
+"<html>",
+"<head>",
+"<base target=\"_top\">",
+"<style>",
+"  body{font-family:sans-serif;background:#FAF6EF;margin:0;padding:24px;color:#1F2A44}",
+"  h1{color:#17325E;margin-top:0}",
+"  .login{max-width:420px;background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 14px rgba(0,0,0,.06)}",
+"  input{width:100%;font-size:18px;padding:12px;border:2px solid #E6DFD1;border-radius:12px;box-sizing:border-box}",
+"  button{font-size:17px;padding:10px 16px;border:0;border-radius:10px;background:#17325E;color:#fff;font-weight:bold;cursor:pointer}",
+"  .card{background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 3px 10px rgba(0,0,0,.05)}",
+"  .card small{color:#5E677A}",
+"  .done{background:#1E7F4F}",
+"  #msg{margin:12px 0;font-weight:bold;color:#C8342B}",
+"  #bar{display:none;justify-content:space-between;align-items:center;margin-bottom:14px}",
+"</style>",
+"</head>",
+"<body>",
+"<h1>📋 상담 신청 확인 (교사용)</h1>",
+"<div class=\"login\" id=\"login\">",
+"  <p>비밀번호를 입력하세요</p>",
+"  <input id=\"pw\" type=\"password\" placeholder=\"비밀번호\">",
+"  <p><button id=\"enter\">확인</button></p>",
+"</div>",
+"<div id=\"bar\"><b id=\"count\"></b><button id=\"reload\">새로고침</button></div>",
+"<div id=\"msg\"></div>",
+"<div id=\"list\"></div>",
+"<script>",
+"  var PW = '';",
+"  var msg = document.getElementById('msg');",
+"  function load() {",
+"    msg.textContent = '';",
+"    google.script.run",
+"      .withSuccessHandler(render)",
+"      .withFailureHandler(function (e) { msg.textContent = e.message; })",
+"      .getPending(PW);",
+"  }",
+"  function render(items) {",
+"    document.getElementById('login').style.display = 'none';",
+"    document.getElementById('bar').style.display = 'flex';",
+"    document.getElementById('count').textContent = '대기 ' + items.length + '건';",
+"    var box = document.getElementById('list');",
+"    box.innerHTML = '';",
+"    if (!items.length) { box.textContent = '대기 중인 신청이 없어요 🎉'; return; }",
+"    items.forEach(function (it) {",
+"      var c = document.createElement('div'); c.className = 'card';",
+"      var info = document.createElement('div');",
+"      var title = document.createElement('b');",
+"      title.textContent = it.classroom + ' ' + it.name + ' → ' + it.target;",
+"      var sub = document.createElement('small');",
+"      sub.textContent = ' ' + it.category + ' · ' + it.when;",
+"      info.appendChild(title); info.appendChild(document.createElement('br')); info.appendChild(sub);",
+"      var btn = document.createElement('button'); btn.className = 'done'; btn.textContent = '완료';",
+"      btn.onclick = function () {",
+"        btn.disabled = true; btn.textContent = '처리 중...';",
+"        google.script.run",
+"          .withSuccessHandler(load)",
+"          .withFailureHandler(function (e) { msg.textContent = e.message; btn.disabled = false; btn.textContent = '완료'; })",
+"          .markDone(PW, it.row);",
+"      };",
+"      c.appendChild(info); c.appendChild(btn); box.appendChild(c);",
+"    });",
+"  }",
+"  document.getElementById('enter').onclick = function () { PW = document.getElementById('pw').value; load(); };",
+"  document.getElementById('pw').onkeydown = function (e) { if (e.key === 'Enter') document.getElementById('enter').click(); };",
+"  document.getElementById('reload').onclick = load;",
+"</scr"+"ipt>",
+"</body>",
+"</html>"].join("\n");
+
+var KC2=document.getElementById('tpl-kc2').value;
+
+var RC1=[
+"function doGet(e) {",
+"  var page = (e && e.parameter && e.parameter.page === 'admin') ? 'admin' : 'index';",
+"  return HtmlService.createHtmlOutputFromFile(page)",
+"    .setTitle(page === 'admin' ? '연수 등록 현황' : '연수 등록부')",
+"    .addMetaTag('viewport', 'width=device-width, initial-scale=1');",
+"}",
+"",
+"function readRows_(sheetName) {",
+"  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);",
+"  if (!sheet) throw new Error(\"'\" + sheetName + \"' 시트를 찾을 수 없어요.\");",
+"  return sheet.getDataRange().getValues().slice(1);",
+"}",
+"",
+"function getNames_() {",
+"  return readRows_('명단').map(function (r) { return String(r[0]).trim(); }).filter(String);",
+"}",
+"",
+"function getTrainings_(onlyOpen) {",
+"  var today = new Date(); today.setHours(0, 0, 0, 0);",
+"  return readRows_('연수목록').filter(function (r) {",
+"    if (!String(r[0]).trim()) return false;",
+"    if (!onlyOpen || !r[1]) return true;",
+"    return new Date(r[1]) >= today;",
+"  }).map(function (r) { return String(r[0]).trim(); });",
+"}",
+"",
+"function getInitData() {",
+"  return { names: getNames_(), trainings: getTrainings_(true) };",
+"}",
+"",
+"function register(training, name, hours) {",
+"  if (!training || !name || !hours) return { ok: false, message: '빈칸을 모두 채워 주세요.' };",
+"  var lock = LockService.getScriptLock();",
+"  lock.waitLock(10000);",
+"  try {",
+"    var dup = readRows_('등록').some(function (r) {",
+"      return String(r[1]).trim() === training && String(r[2]).trim() === name;",
+"    });",
+"    if (dup) return { ok: false, message: '이미 등록되었습니다.' };",
+"    SpreadsheetApp.getActiveSpreadsheet().getSheetByName('등록')",
+"      .appendRow([new Date(), training, name, Number(hours)]);",
+"    return { ok: true, message: '등록되었습니다. 감사합니다!' };",
+"  } finally {",
+"    lock.releaseLock();",
+"  }",
+"}",
+"",
+"function getStatus() {",
+"  var names = getNames_();",
+"  var rows = readRows_('등록');",
+"  return getTrainings_(false).map(function (t) {",
+"    var done = rows.filter(function (r) { return String(r[1]).trim() === t; })",
+"                   .map(function (r) { return String(r[2]).trim(); });",
+"    var missing = names.filter(function (n) { return done.indexOf(n) === -1; });",
+"    return { training: t, total: names.length, done: names.length - missing.length, missing: missing };",
+"  });",
+"}"].join("\n");
+
+var RC2=[
+"<!DOCTYPE html>",
+"<html>",
+"<head>",
+"<base target=\"_top\">",
+"<style>",
+"  body{font-family:sans-serif;background:#FAF6EF;margin:0;padding:24px;color:#1F2A44}",
+"  .box{max-width:520px;margin:0 auto;background:#fff;border-radius:18px;padding:28px;box-shadow:0 6px 20px rgba(0,0,0,.06)}",
+"  h1{color:#17325E;font-size:26px;margin-top:0}",
+"  label{display:block;font-weight:bold;margin:16px 0 6px}",
+"  select,input{width:100%;font-size:18px;padding:12px;border:2px solid #E6DFD1;border-radius:12px;box-sizing:border-box}",
+"  button{margin-top:22px;width:100%;font-size:20px;padding:14px;border:0;border-radius:12px;background:#17325E;color:#fff;font-weight:bold}",
+"  #msg{margin-top:16px;font-weight:bold;text-align:center}",
+"</style>",
+"</head>",
+"<body>",
+"<div class=\"box\">",
+"  <h1>📚 교직원 연수 등록부</h1>",
+"  <label>연수명</label><select id=\"training\"><option value=\"\">불러오는 중...</option></select>",
+"  <label>이름</label><select id=\"name\"><option value=\"\">불러오는 중...</option></select>",
+"  <label>이수시간</label><input id=\"hours\" type=\"number\" min=\"1\" placeholder=\"예: 2\">",
+"  <button id=\"go\">등록하기</button>",
+"  <div id=\"msg\"></div>",
+"</div>",
+"<script>",
+"  function fill(id, items, first) {",
+"    var s = document.getElementById(id);",
+"    s.innerHTML = '<option value=\"\">' + first + '</option>';",
+"    items.forEach(function (t) { var o = document.createElement('option'); o.value = t; o.textContent = t; s.appendChild(o); });",
+"  }",
+"  google.script.run.withSuccessHandler(function (d) {",
+"    fill('training', d.trainings, '연수를 고르세요');",
+"    fill('name', d.names, '이름을 고르세요');",
+"  }).getInitData();",
+"  document.getElementById('go').onclick = function () {",
+"    var btn = this, msg = document.getElementById('msg');",
+"    btn.disabled = true; msg.textContent = '저장 중...'; msg.style.color = '#5E677A';",
+"    google.script.run",
+"      .withSuccessHandler(function (r) {",
+"        msg.textContent = r.message; msg.style.color = r.ok ? '#145C38' : '#C8342B';",
+"        btn.disabled = false;",
+"        if (r.ok) document.getElementById('hours').value = '';",
+"      })",
+"      .withFailureHandler(function (e) { msg.textContent = '오류: ' + e.message; msg.style.color = '#C8342B'; btn.disabled = false; })",
+"      .register(document.getElementById('training').value, document.getElementById('name').value, document.getElementById('hours').value);",
+"  };",
+"</scr"+"ipt>",
+"</body>",
+"</html>"].join("\n");
+
+var RC3=[
+"<!DOCTYPE html>",
+"<html>",
+"<head>",
+"<base target=\"_top\">",
+"<style>",
+"  body{font-family:sans-serif;background:#FAF6EF;margin:0;padding:24px;color:#1F2A44}",
+"  h1{color:#17325E}",
+"  .card{background:#fff;border-radius:16px;padding:20px 24px;margin-bottom:14px;box-shadow:0 4px 14px rgba(0,0,0,.05)}",
+"  .bar{height:12px;background:#E6DFD1;border-radius:99px;overflow:hidden;margin:10px 0}",
+"  .bar i{display:block;height:100%;background:#2F6FD1}",
+"  .miss{color:#C8342B;font-weight:bold}",
+"</style>",
+"</head>",
+"<body>",
+"<h1>📋 연수 등록 현황</h1>",
+"<div id=\"list\">불러오는 중...</div>",
+"<script>",
+"  google.script.run.withSuccessHandler(function (rows) {",
+"    var box = document.getElementById('list');",
+"    box.innerHTML = '';",
+"    rows.forEach(function (r) {",
+"      var pct = r.total ? Math.round(r.done / r.total * 100) : 0;",
+"      var c = document.createElement('div'); c.className = 'card';",
+"      var h = document.createElement('h3'); h.textContent = r.training + ' · ' + r.done + ' / ' + r.total + '명';",
+"      var bar = document.createElement('div'); bar.className = 'bar';",
+"      var fillEl = document.createElement('i'); fillEl.style.width = pct + '%'; bar.appendChild(fillEl);",
+"      var m = document.createElement('p'); m.className = 'miss';",
+"      m.textContent = r.missing.length ? '미등록 ' + r.missing.length + '명: ' + r.missing.join(', ') : '모두 등록했어요 🎉';",
+"      c.appendChild(h); c.appendChild(bar); c.appendChild(m); box.appendChild(c);",
+"    });",
+"  }).withFailureHandler(function (e) { document.getElementById('list').textContent = '오류: ' + e.message; }).getStatus();",
+"</scr"+"ipt>",
+"</body>",
+"</html>"].join("\n");
+
+
+var NC1=[
+"function doGet(e) {",
+"  var p = (e && e.parameter) || {};",
+"  if (p.page === 'admin') {",
+"    return HtmlService.createHtmlOutputFromFile('admin')",
+"      .setTitle('연수 등록 현황')",
+"      .addMetaTag('viewport', 'width=device-width, initial-scale=1');",
+"  }",
+"  if (p.action === 'init') return json_(safe_(getInitData));",
+"  return json_({ ok: false, message: '알 수 없는 요청입니다.' });",
+"}",
+"",
+"function doPost(e) {",
+"  return json_(safe_(function () {",
+"    var d = JSON.parse(e.postData.contents);",
+"    return register(d.training, d.name, d.hours);",
+"  }));",
+"}",
+"",
+"function safe_(fn) {",
+"  try { return fn(); } catch (err) { return { ok: false, message: String(err.message || err) }; }",
+"}",
+"",
+"function json_(obj) {",
+"  return ContentService.createTextOutput(JSON.stringify(obj))",
+"    .setMimeType(ContentService.MimeType.JSON);",
+"}",
+""].join("\n") + RC1.slice(RC1.indexOf('function readRows_'));
+
+var NC2=[
+"<!DOCTYPE html>",
+"<html lang=\"ko\">",
+"<head>",
+"<meta charset=\"utf-8\">",
+"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
+"<title>교직원 연수 등록부</title>",
+"<style>",
+"  body{font-family:sans-serif;background:#FAF6EF;margin:0;padding:24px;color:#1F2A44}",
+"  .box{max-width:520px;margin:0 auto;background:#fff;border-radius:18px;padding:28px;box-shadow:0 6px 20px rgba(0,0,0,.06)}",
+"  h1{color:#17325E;font-size:26px;margin-top:0}",
+"  label{display:block;font-weight:bold;margin:16px 0 6px}",
+"  select,input{width:100%;font-size:18px;padding:12px;border:2px solid #E6DFD1;border-radius:12px;box-sizing:border-box}",
+"  button{margin-top:22px;width:100%;font-size:20px;padding:14px;border:0;border-radius:12px;background:#17325E;color:#fff;font-weight:bold}",
+"  #msg{margin-top:16px;font-weight:bold;text-align:center}",
+"</style>",
+"</head>",
+"<body>",
+"<div class=\"box\">",
+"  <h1>📚 교직원 연수 등록부</h1>",
+"  <label>연수명</label><select id=\"training\"><option value=\"\">불러오는 중...</option></select>",
+"  <label>이름</label><select id=\"name\"><option value=\"\">불러오는 중...</option></select>",
+"  <label>이수시간</label><input id=\"hours\" type=\"number\" min=\"1\" placeholder=\"예: 2\">",
+"  <button id=\"go\">등록하기</button>",
+"  <div id=\"msg\"></div>",
+"</div>",
+"<script>",
+"  // ▼ 여기만 바꾸세요: Apps Script 웹 앱 URL (…/exec 로 끝나는 주소)",
+"  const SCRIPT_URL = '여기에_웹앱_URL_붙여넣기';",
+"",
+"  const msg = document.getElementById('msg');",
+"  function show(text, ok) { msg.textContent = text; msg.style.color = ok ? '#145C38' : '#C8342B'; }",
+"  function fill(id, items, first) {",
+"    const s = document.getElementById(id);",
+"    s.innerHTML = '<option value=\"\">' + first + '</option>';",
+"    items.forEach(function (t) { const o = document.createElement('option'); o.value = t; o.textContent = t; s.appendChild(o); });",
+"  }",
+"  fetch(SCRIPT_URL + '?action=init')",
+"    .then(function (r) { return r.json(); })",
+"    .then(function (d) {",
+"      if (d.ok === false) throw new Error(d.message);",
+"      fill('training', d.trainings, '연수를 고르세요');",
+"      fill('name', d.names, '이름을 고르세요');",
+"    })",
+"    .catch(function (e) { show('목록을 불러오지 못했어요: ' + e.message, false); });",
+"",
+"  document.getElementById('go').onclick = function () {",
+"    const btn = this;",
+"    btn.disabled = true; msg.style.color = '#5E677A'; msg.textContent = '저장 중...';",
+"    fetch(SCRIPT_URL, {",
+"      method: 'POST',",
+"      headers: { 'Content-Type': 'text/plain;charset=utf-8' },",
+"      body: JSON.stringify({",
+"        training: document.getElementById('training').value,",
+"        name: document.getElementById('name').value,",
+"        hours: document.getElementById('hours').value",
+"      })",
+"    })",
+"      .then(function (r) { return r.json(); })",
+"      .then(function (r) {",
+"        show(r.message, r.ok);",
+"        if (r.ok) document.getElementById('hours').value = '';",
+"      })",
+"      .catch(function (e) { show('저장하지 못했어요: ' + e.message, false); })",
+"      .finally(function () { btn.disabled = false; });",
+"  };",
+"</scr"+"ipt>",
+"</body>",
+"</html>"].join("\n");
+
+function setText(id,t){var el=document.getElementById(id);if(el)el.textContent=t;}
+setText('kc1',KC1);setText('kc2',KC2);setText('kc3',KC3);setText('rc1',RC1);setText('rc2',RC2);setText('rc3',RC3);setText('nc1',NC1);setText('nc2',NC2);
+
+/* ---------- 프롬프트 빌더 ---------- */
+function v(id){var e=document.getElementById(id);return e.type==='checkbox'?e.checked:e.value.trim();}
+function list(s){return s.split(/[,，]/).map(function(x){return x.trim()}).filter(Boolean).join('/');}
+function kiosk(){
+  var cols=['신청일시','학년반','이름','대상','분류'];if(v('kMemo'))cols.push('하고싶은말');cols.push('처리상태');
+  var lines=[
+  "너는 초등학교 업무용 웹앱을 만드는 개발자야. 구글 앱스 스크립트 웹앱으로 '학생 상담 신청 키오스크'를 만들어 줘.",
+  "- 사용자: 초등학생이 "+v('kDevice')+" 화면으로 신청. 큰 버튼, 쉬운 말.",
+  "- 학년반: "+(v('kClass')==='btn'?"학년 버튼과 반 버튼으로 고르기 (예: 4-2로 저장)":"직접 입력 (예: 4-2)"),
+  "- 이름: "+(v('kAnon')?"선택 입력. '이름 없이 신청' 버튼을 누르거나 비우면 '(익명)'으로 저장":"필수 입력"),
+  "- 대상(버튼): "+list(v('kTarget')),
+  "- 분류(버튼): "+list(v('kCat'))];
+  if(v('kMemo'))lines.push("- 하고 싶은 말: 선택 입력, 100자 이내");
+  lines.push("- 저장: 이 스프레드시트의 '상담신청' 시트에 ["+cols.join(', ')+"] 순서로 한 줄 추가. 처리상태는 '대기'.");
+  lines.push("- 빠진 칸이 있으면 제출하지 않고 안내.");
+  if(v('kFun'))lines.push("- 디자인: 학생이 부담 없이 누르도록 친근하게. 첫 화면에 곰 같은 캐릭터 이모지가 둥실둥실 움직이고, 한 화면에 질문 하나씩(학년 → 반 → 대상 → 분류 → 이름) 넘어가게. 버튼은 색깔이 다른 큰 타일이고 누르면 쏙 눌리는 효과, 위에 진행 점 표시, 완료하면 색종이 효과. 글꼴은 구글 폰트 Jua(제목)와 Gowun Dodum(본문). 1분 동안 아무것도 안 누르면 첫 화면으로.");
+  lines.push("- 제출 후 \""+(v('kThanks')||'선생님이 곧 불러 줄게요')+"\" 화면을 3초 보여 주고 처음 화면으로.");
+  if(v('kAdmin')){lines.push("- 교사용 확인 페이지: 주소 끝에 ?page=admin을 붙이면 열리는 admin.html. 비밀번호(Code.gs 안의 상수로만 저장)를 맞게 입력해야 처리상태가 '대기'인 신청만 목록으로 보여 주고, 줄마다 [완료] 버튼을 누르면 그 줄의 처리상태를 '완료'로 바꿔 줘.");
+    lines.push("- 파일은 Code.gs, index.html, admin.html 세 개로 나누고, 붙여 넣을 위치와 배포 방법까지 알려 줘.");}
+  else lines.push("- 파일은 Code.gs와 index.html 두 개로 나누고, 붙여 넣을 위치와 배포 방법까지 알려 줘.");
+  setText('kOut',lines.join("\n"));
+}
+function reg(){
+  var lines=[
+  "구글 앱스 스크립트 웹앱으로 '"+(v('rTitle')||'교직원 온라인 연수 등록부')+"'를 만들어 줘.",
+  "- 시트: '명단'(이름, 부서), '등록'(등록일시, 연수명, 이름, 이수시간), '연수목록'(연수명, 마감일). 모두 1행은 제목.",
+  "- 등록 화면: 연수명 선택(연수목록 시트에서 불러오기) → 이름 선택(명단 시트에서 불러오기)"+(v('rHours')?" → 이수시간 입력":"")+" → 등록 버튼.",
+  "- 빈칸이 있으면 저장하지 말고 안내."];
+  if(v('rDup'))lines.push("- 같은 연수에 같은 이름이 이미 있으면 \"이미 등록되었습니다\" 안내하고 저장하지 않기. 동시에 여러 명이 눌러도 겹치지 않게.");
+  if(v('rDeadline'))lines.push("- 마감일이 지난 연수는 등록 화면 목록에서 숨기기.");
+  if(v('rAdmin'))lines.push("- 관리 화면(주소 끝에 ?page=admin): 연수별 등록 인원/전체 인원과 진행 막대, 미등록자 이름을 빨간색으로.");
+  if(v('rAdmin')&&v('rOwner'))lines.push("- 관리 화면은 스크립트 소유자 계정으로 접속했을 때만 보이고, 다른 사람에게는 '권한 없음'을 보여 줘.");
+  lines.push("- 파일은 Code.gs, index.html"+(v('rAdmin')?", admin.html로":"으로")+" 나누고, 붙여 넣을 위치와 배포 방법까지 알려 줘.");
+  setText('rOut',lines.join("\n"));
+}
+function apply(){
+  var name=v('aName')||'(앱 이름)', sheet=v('aSheet')||'(시트 이름)', cols=v('aCols')||'(열 이름)';
+  var lines=[
+  "너는 초등학교 업무용 웹앱을 만드는 개발자야. 구글 앱스 스크립트 웹앱으로 '"+name+"'를 만들어 줘.",
+  "- 목적: 지금 손으로 하는 '"+v('aFake')+"'를 없애고 싶어.",
+  "- 사용자: "+(v('aUser')||'(누가, 어떤 기기로)'),
+  "- 저장: 이 스프레드시트의 '"+sheet+"' 시트에 ["+cols.split(/[,，]/).map(function(x){return x.trim()}).filter(Boolean).join(', ')+"] 순서로 한 줄씩 추가.",
+  "- 받지 않을 정보: "+(v('aNo')||'(없음)'),
+  "- 빠진 칸이 있으면 저장하지 말고 안내.",
+  "- 파일은 Code.gs와 index.html로 나누고, 붙여 넣을 위치와 배포 방법까지 알려 줘.",
+  "- 다 만들면 내가 해 볼 테스트 방법도 알려 줘: "+(v('aTest')||'정상 1건, 중복 1건, 빈칸 1건')];
+  setText('aOut',lines.join("\n"));
+}
+['kTarget','kCat','kClass','kAnon','kMemo','kThanks','kDevice','kAdmin','kFun'].forEach(function(id){var e=document.getElementById(id);e.addEventListener('input',kiosk);e.addEventListener('change',kiosk);});
+['rDup','rHours','rAdmin','rDeadline','rOwner','rTitle'].forEach(function(id){var e=document.getElementById(id);e.addEventListener('input',reg);e.addEventListener('change',reg);});
+['aName','aFake','aUser','aSheet','aCols','aNo','aTest'].forEach(function(id){var e=document.getElementById(id);e.addEventListener('input',apply);e.addEventListener('change',apply);});
+kiosk();reg();apply();
+
+/* ---------- 검증 ---------- */
+var FIX={
+ t1:"정상 등록을 했는데 등록 시트에 저장된 값이 이상해. 열 순서는 [등록일시, 연수명, 이름, 이수시간]이어야 하고 시간은 한국 시간이어야 해. 고친 전체 코드를 다시 줘.",
+ t2:"같은 연수에 같은 이름으로 한 번 더 등록했더니 그냥 저장됐어. 같은 연수·같은 이름이 이미 있으면 \"이미 등록되었습니다\"라고 안내하고 저장하지 않게 고쳐 줘.",
+ t3:"이수시간을 비우고 등록했더니 저장됐어. 빈칸이 하나라도 있으면 저장하지 말고 \"빈칸을 모두 채워 주세요\"라고 안내하게 고쳐 줘.",
+ t4:"관리 화면(?page=admin)의 숫자가 틀려. 명단 시트 인원이 전체, 등록 시트에서 해당 연수에 이름이 있는 사람이 등록 인원이야. 미등록자 계산을 고쳐 줘.",
+ t5:"다른 선생님이 웹앱 주소로 접속하면 권한 오류가 나. 배포 설정에서 무엇을 바꿔야 하는지 단계별로 알려 줘."
+};
+var testState={};
+[].forEach.call(document.querySelectorAll('.test'),function(t){
+  var k=t.getAttribute('data-k');var p=t.querySelector('.p'),f=t.querySelector('.f');
+  p.onclick=function(){testState[k]='p';p.classList.add('on');f.classList.remove('on');renderTests();};
+  f.onclick=function(){testState[k]='f';f.classList.add('on');p.classList.remove('on');renderTests();};
+});
+function renderTests(){
+  var box=document.getElementById('testResult');var fails=Object.keys(testState).filter(function(k){return testState[k]==='f'});
+  var passes=Object.keys(testState).filter(function(k){return testState[k]==='p'});
+  if(!fails.length&&!passes.length){box.innerHTML='';return;}
+  if(!fails.length){box.innerHTML='<div class="note ok"><b>👏 통과 '+passes.length+' / 5</b>'+(passes.length===5?'공유해도 좋아요!':'나머지 항목도 확인해 보세요.')+'</div>';return;}
+  var txt=fails.map(function(k){return FIX[k]}).join("\n\n");
+  box.innerHTML='<div class="note warn"><b>실패 '+fails.length+'개 · 아래 문장을 AI에게 보내세요</b></div><div class="code-wrap" style="margin-top:10px"><button class="copy" data-copyfrom="fixOut">복사</button><div class="code prompt" id="fixOut"></div></div>';
+  setText('fixOut',txt);
+}
+
+/* ---------- 미리 보기 ---------- */
+var MOCK='<scr'+'ipt>window.google={script:{run:(function(){var s,f;var o={withSuccessHandler:function(fn){s=fn;return o},withFailureHandler:function(fn){f=fn;return o},submitRequest:function(){setTimeout(function(){if(s)s(true)},600)}};return o})()}};</scr'+'ipt>';
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-preview]');if(!b)return;
+  var html=KC2.replace('<scr'+'ipt>',MOCK+'<scr'+'ipt>');
+  document.getElementById('pvFrame').srcdoc=html;
+  document.getElementById('pv').hidden=false;
+});
+document.getElementById('pvClose').onclick=function(){document.getElementById('pv').hidden=true;document.getElementById('pvFrame').srcdoc='';};
+document.getElementById('pv').addEventListener('click',function(e){if(e.target.id==='pv')document.getElementById('pvClose').click();});
+
+/* ---------- 복사 ---------- */
+var toast=document.getElementById('toast');
+function showToast(m){toast.textContent=m;toast.classList.add('on');clearTimeout(showToast._t);showToast._t=setTimeout(function(){toast.classList.remove('on')},1500);}
+function copy(text,btn){
+  function ok(){showToast('복사했어요');if(btn&&btn.classList.contains('copy')){btn.textContent='복사됨 ✔';btn.classList.add('ok');setTimeout(function(){btn.textContent='복사';btn.classList.remove('ok')},1500);}}
+  try{navigator.clipboard.writeText(text).then(ok,function(){fallback(text)?ok():showToast('직접 선택해서 복사해 주세요');});}
+  catch(e){fallback(text)?ok():showToast('직접 선택해서 복사해 주세요');}
+}
+function fallback(text){try{var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();var r=document.execCommand('copy');document.body.removeChild(ta);return r;}catch(e){return false;}}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-copyfrom],[data-copytext]');if(!b)return;
+  e.preventDefault();
+  var t=b.hasAttribute('data-copytext')?b.getAttribute('data-copytext'):document.getElementById(b.getAttribute('data-copyfrom')).textContent;
+  copy(t,b);
+});
+
+/* ---------- 탭 ---------- */
+[].forEach.call(document.querySelectorAll('.tabs'),function(tb){
+  var btns=tb.querySelectorAll('button');
+  [].forEach.call(btns,function(b){b.addEventListener('click',function(){
+    [].forEach.call(btns,function(x){x.classList.remove('on');var p=document.querySelector('[data-pane="'+x.getAttribute('data-t')+'"]');if(p)p.hidden=true;});
+    b.classList.add('on');document.querySelector('[data-pane="'+b.getAttribute('data-t')+'"]').hidden=false;
+  });});
+});
+
+/* ---------- 배포 단계 체크 ---------- */
+[].forEach.call(document.querySelectorAll('#deploySteps label.step, #netlifySteps label.step'),function(l){
+  var cb=l.querySelector('input');
+  cb.addEventListener('change',function(){l.style.background=cb.checked?'#E3F3EC':'';l.querySelector('.n').style.background=cb.checked?'#145C38':'';l.querySelector('.n').textContent=cb.checked?'✔':l.querySelector('.n').getAttribute('data-n');});
+  l.querySelector('.n').setAttribute('data-n',l.querySelector('.n').textContent);
+  l.style.cursor='pointer';
+});
+
+/* ---------- 진행 기록 ---------- */
+var KEY='sheetapp-lab-done';var done={};
+try{done=JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){done={};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(done));}catch(e){}}
+function renderDone(){
+  var n=0;for(var i=1;i<=9;i++){if(done[i])n++;}
+  document.getElementById('lvtxt').textContent=n+' / 9';
+  document.getElementById('lvfill').style.width=(n/9*100)+'%';
+  [].forEach.call(document.querySelectorAll('.done-btn'),function(b){var k=b.getAttribute('data-done');b.classList.toggle('on',!!done[k]);b.textContent=done[k]?'다 했어요 ✔':'다 했어요';});
+  [].forEach.call(document.querySelectorAll('.nav-a'),function(a){a.classList.toggle('done',!!done[a.getAttribute('data-i')]);});
+}
+[].forEach.call(document.querySelectorAll('.done-btn'),function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-done');done[k]=!done[k];save();renderDone();if(done[k])showToast('레벨 업! ⭐');});});
+renderDone();
+
+/* ---------- 장 이동 ---------- */
+var chs=[].slice.call(document.querySelectorAll('.ch'));var cur=0;
+function show(i){
+  i=Math.max(0,Math.min(chs.length-1,i));cur=i;
+  chs.forEach(function(c,k){c.classList.toggle('on',k===i)});
+  [].forEach.call(document.querySelectorAll('.nav-a'),function(a){a.classList.toggle('cur',+a.getAttribute('data-i')===i)});
+  var pa=document.getElementById('prevA'),na=document.getElementById('nextA');
+  if(i>0){pa.classList.remove('hide');pa.href='#ch-'+(i-1);document.getElementById('prevT').textContent='← '+chs[i-1].getAttribute('data-name');}else pa.classList.add('hide');
+  if(i<chs.length-1){na.classList.remove('hide');na.href='#ch-'+(i+1);document.getElementById('nextT').textContent=chs[i+1].getAttribute('data-name')+' →';}else na.classList.add('hide');
+  document.getElementById('pCount').textContent=i+' / 9';
+  document.getElementById('side').classList.remove('open');
+  window.scrollTo(0,0);
+}
+function fromHash(){var m=/^#ch-(\d)$/.exec(location.hash);return m?+m[1]:0;}
+window.addEventListener('hashchange',function(){show(fromHash())});
+function goto(i){i=Math.max(0,Math.min(9,i));if(location.hash!=='#ch-'+i)location.hash='ch-'+i;else show(i);}
+document.getElementById('menuBtn').onclick=function(){document.getElementById('side').classList.toggle('open')};
+
+/* ---------- 발표 모드 ---------- */
+function present(on){document.body.classList.toggle('present',on);document.getElementById('presentBtn').textContent=on?'🖥 발표 끝내기':'🖥 발표 모드';}
+document.getElementById('presentBtn').onclick=function(){present(!document.body.classList.contains('present'))};
+document.getElementById('pEnd').onclick=function(){present(false)};
+document.getElementById('pPrev').onclick=function(){goto(cur-1)};
+document.getElementById('pNext').onclick=function(){goto(cur+1)};
+document.addEventListener('keydown',function(e){
+  var tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea'||tag==='select')return;
+  if(!document.body.classList.contains('present'))return;
+  if(e.key==='ArrowRight'){goto(cur+1);}else if(e.key==='ArrowLeft'){goto(cur-1);}else if(e.key==='Escape'){present(false);}
+});
+
+show(fromHash());
+})();
+</script>
+</body>
+</html>
